@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"/>
+  <meta charset="UTF-8">
+
+  <title>Привет!</title>
+</head>
+<body>
+<!-- Выпадающее меню -->
+<ul class="nav nav-tabs">
+  <li class="nav-item">
+    <a class="nav-link" href="/">Основное меню</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/load">Загрузить исходные данные</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="/div">Разделить матрицу</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/answer">Результаты решения</a>
+  </li>
+</ul>
+
+<br/><br/>
+
+{% if xLen %}
+    {% if h1 and h2 %}
+        <div class="container">
+          <div class="row">
+            <div class="col-sm">
+              <div id="l_group" class="list-group">
+                {% for item in h1 %}
+                  <button id="l_{{item}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item}}">{{item}}</button>
+                {% endfor %}
+              </div>
+            </div>
+           <div class="col-sm">
+           </div>
+              <div class="col-sm">
+              <div id="r_group" class="list-group">
+                  {% for item in h2 %}
+                    <button id="l_{{item}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item}}">{{item}}</button>
+                  {% endfor %}
+              </div>
+              </div>
+          </div>
+        </div>
+
+    {% else %}
+        <div class="container">
+  <div class="row">
+    <div class="col-sm">
+      <div id="l_group" class="list-group">
+        {% for item in xLen %}
+        <button id="l_{{item}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item}}">{{item}}</button>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-sm">
+    </div>
+    <div class="col-sm">
+      <div id="r_group" class="list-group">
+      </div>
+    </div>
+  </div>
+</div>
+    {% endif %}
+
+<br/><br/>
+<a class="btn btn-primary" href="#" role="button">Автоматически</a>
+
+<button type="button" class="btn btn-primary" onclick="send(this)">Готово</button>
+
+<a id="btn_answer" class="btn btn-primary" href="/answer" role="button" hidden="true">Получить решение</a>
+
+<script type="text/javascript">
+  function lbtn(event){
+      document.getElementById('l_'.concat(event.value)).remove();
+      var elem = document.createElement('button');
+      elem.setAttribute('id', 'r_'.concat(event.value));
+      elem.setAttribute('onclick', 'rbtn(this)');
+      elem.setAttribute('type', "button");
+      elem.setAttribute('class', "list-group-item list-group-item-action");
+      elem.setAttribute('value', event.value);
+      elem.innerHTML = event.value;
+
+      document.getElementById('r_group').append(elem);
+  }
+
+  function rbtn(event) {
+      document.getElementById('r_'.concat(event.value)).remove();
+      var elem = document.createElement('button');
+      elem.setAttribute('id', 'l_'.concat(event.value));
+      elem.setAttribute('onclick', 'lbtn(this)');
+      elem.setAttribute('type', "button");
+      elem.setAttribute('class', "list-group-item list-group-item-action");
+      elem.setAttribute('value', event.value);
+      elem.innerHTML = event.value;
+
+      document.getElementById('l_group').append(elem);
+  }
+
+  function send(event) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.open('POST', '/answer', false);
+
+    xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+
+    let json = JSON.stringify({
+      h1: getIndexH1(),
+      h2: getIndexH2()
+    });
+
+    xhr.onloadend = function() {
+        if (xhr.status == 200)
+            document.getElementById('btn_answer').removeAttribute('hidden');
+        else
+            alert('Что-то пошло не так!');
+    };
+
+    xhr.send(json);
+  }
+
+  function getIndexH1() {
+      var group = document.getElementById('l_group');
+
+      var list = [];
+      for (var i = 0; i < group.childElementCount; i++)
+      {
+          list.push(group.children[i].value);
+      }
+      return list;
+  }
+
+  function getIndexH2() {
+      var group = document.getElementById('r_group');
+
+      var list = [];
+      for (var i = 0; i < group.childElementCount; i++)
+      {
+          list.push(group.children[i].value);
+      }
+      return list;
+  }
+</script>
+
+{% endif %}
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+</body>
+</html>

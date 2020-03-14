@@ -8,49 +8,82 @@
 </head>
 <body>
 <!-- Выпадающее меню -->
-<div class="pos-f-t">
-  <div class="collapse" id="navbarToggleExternalContent">
-    <div class="bg-dark p-4">
-      <h4 class="text-white">Collapsed content</h4>
-      <span class="text-muted">Toggleable via the navbar brand.</span>
-    </div>
-  </div>
-  <nav class="navbar navbar-dark bg-dark">
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-  </nav>
-</div>
+<ul class="nav nav-tabs">
+  <li class="nav-item">
+    <a class="nav-link active" href="/">Основное меню</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/load">Загрузить исходные данные</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/div">Разделить матрицу</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/answer">Результаты решения</a>
+  </li>
+</ul>
 
-<h1>Загрузите данные</h1>
-<form action="" method=post enctype=multipart/form-data>
-  <p><input type=file name=file>
-  <input type=submit value=Загрузить>
-</form>
-{% if data %}
-  <div style="height: 500px" class="table-responsive">
-  <table class="table table-sm table-striped table-bordered">
-    <thead> <!-- Column names -->
-      <tr>
-        <th scope="col">#</th>
-        {% for item in dataLen %}
-          <th scope="col">x{{ item }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody> <!-- Data -->
-      {% for index in dataRowLen %}
-        <tr>
-          <th scope="row">{{ index }}</th>
-          {% for item in data[index] %}
-            <td>{{item}}</td>
-          {% endfor %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+{#<h1>Загрузите данные</h1>#}
+{#<form action="" method=post enctype=multipart/form-data>#}
+{#  <p><input type=file name=file>#}
+{#  <input type=submit value=Загрузить>#}
+{#</form>#}
+{#{% if data %}#}
+{#  <div style="height: 500px" class="table-responsive">#}
+{#  <table class="table table-sm table-striped table-bordered">#}
+{#    <thead> <!-- Column names -->#}
+{#      <tr>#}
+{#        <th scope="col">#</th>#}
+{#        {% for item in dataLen %}#}
+{#          <th scope="col">x{{ item }}</th>#}
+{#        {% endfor %}#}
+{#      </tr>#}
+{#    </thead>#}
+{#    <tbody> <!-- Data -->#}
+{#      {% for index in dataRowLen %}#}
+{#        <tr>#}
+{#          <th scope="row">{{ index }}</th>#}
+{#          {% for item in data[index] %}#}
+{#            <td>{{item}}</td>#}
+{#          {% endfor %}#}
+{#        </tr>#}
+{#      {% endfor %}#}
+{#    </tbody>#}
+{#  </table>#}
+{#  </div>#}
+{##}
+{#  <br/>#}
+{##}
+{#  <form action="/key" method="POST">#}
+{#    <input class="form-control" name="var_y" type="number" placeholder="Default input">#}
+{#    <button type="submit" class="btn btn-primary">Submit</button>#}
+{#  </form>#}
+{#{% endif %}#}
+
+<form action="/load" method="get">
+  <div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" name="check_MNK" checked="true" disabled>
+    <label class="form-check-label" for="exampleCheck1">МНК</label>
   </div>
-{% endif %}
+  <div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" name="check_MNM" checked="true" disabled>
+    <label class="form-check-label" for="exampleCheck1">МНМ</label>
+  </div>
+  <div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" name="check_MAO" checked="true" disabled>
+    <label class="form-check-label" for="exampleCheck1">МАО</label>
+  </div>
+  <div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" name="check_MCO" checked="true" disabled>
+    <label class="form-check-label" for="exampleCheck1">МСО</label>
+  </div>
+  <br/>
+  <div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" name="free_chlen" {% if data %}{% if data.freeChlen %}checked="true"{% endif %}{% endif %}>
+    <label class="form-check-label" for="exampleCheck1">Использовать свободный член?</label>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>

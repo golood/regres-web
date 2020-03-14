@@ -76,11 +76,11 @@ class MNK(Method):
     def run(self):
         a = self.find_a()
         for item in a:
-            self.a.append(item[0])
+            self.a.append(item)
         eps = self.epselon(self.a)
         for item in eps:
-            self.eps.append(item[0])
-        self.e = self.Epselon(self.a)[0]
+            self.eps.append(item)
+        self.e = self.Epselon(self.a)
 
 
 class MNM(Method):
@@ -95,7 +95,7 @@ class MNM(Method):
         task = rrr.LpSolve_MNM(self.x, self.y)
         task.run()
         self.a, self.eps = task.getResault()
-        self.e = self.Epselon(self.a)[0]
+        self.e = self.Epselon(self.a)
 
 
 class MAO(Method):
@@ -110,7 +110,7 @@ class MAO(Method):
         task = rrr.LpSolve_MAO(self.x, self.y)
         task.run()
         self.a, self.eps = task.getResault()
-        self.e = self.Epselon(self.a)[0]
+        self.e = self.Epselon(self.a)
 
 class MCO(Method):
 
@@ -126,7 +126,7 @@ class MCO(Method):
         task = rrr.LpSolve_MCO(self.x, self.y, self.h1, self.h2)
         task.run()
         self.a, self.eps = task.getResault()
-        self.e = self.Epselon(self.a)[0]
+        self.e = self.Epselon(self.a)
 
 
 class Task:
