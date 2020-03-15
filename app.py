@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 from werkzeug.utils import secure_filename
 from server.main import Data, DataEncoder, Test, TestT
 import server.utill as utill
+import datetime
 
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
@@ -13,6 +14,7 @@ UPLOAD_FOLDER = '/home/golod/projects/regres-web/static'
 ALLOWED_EXTENSIONS = set(['txt'])
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.permanent_session_lifetime = datetime.timedelta(hours=3)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -57,6 +59,8 @@ def upload_file():
 
       if request.args:
         data.freeChlen = utill.get_value_checkbox(request.args['free_chlen'])
+      else:
+          data.freeChlen = False
 
       session['data'] = json.dumps(data, cls=DataEncoder)
 
@@ -80,8 +84,14 @@ def hello(name=None):
 def getKey():
   try:
     var_y = request.form['var_y']
-
     data = Data(json.loads(session['data']))
+
+    if var_y == "":
+        return render_template('error.html', e='Введите значение зависимой переменной!')
+    elif int(var_y) > len(data.loadMatrix[0]):
+        return render_template('error.html', e='Значение индекса слишком большое!')
+    elif int(var_y) < 0:
+        return render_template('error.html', e='Значение индекса не может быть отрицательным!')
 
     data.set_y(int(var_y))
 
@@ -145,10 +155,10 @@ def auto():
     result = []
     for item in res:
         line = []
-        line.append(item[0][0])
-        line.append(item[0][1])
-        line.append(item[0][2])
-        line.append(item[1])
+        line.append(utill.format_numbers(item[0][0]))
+        line.append(utill.format_numbers(item[0][1]))
+        line.append(utill.format_number(item[0][2]))
+        line.append(utill.format_number(item[1]))
         line.append(item[2])
         line.append(item[3])
         result.append(line)
