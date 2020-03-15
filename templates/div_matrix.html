@@ -69,11 +69,38 @@
     {% endif %}
 
 <br/><br/>
-<a class="btn btn-primary" href="#" role="button">Автоматически</a>
+<a class="btn btn-primary" href="/auto" role="button">Автоматически</a>
 
 <button type="button" class="btn btn-primary" onclick="send(this)">Готово</button>
 
 <a id="btn_answer" class="btn btn-primary" href="/answer" role="button" hidden="true">Получить решение</a>
+
+{% if auto %}
+    <table class="table table-sm table-striped table-bordered">
+    <thead> <!-- Column names -->
+      <tr>
+          <th scope="col">#</th>
+          <th scope="col">alfa</th>
+          <th scope="col">eps</th>
+          <th scope="col">E</th>
+          <th scope="col">Оценка критерия смещения</th>
+          <th scope="col">N1</th>
+          <th scope="col">N2</th>
+      </tr>
+    </thead>
+    <tbody> <!-- Data -->
+      {% for index in resLen %}
+        <tr>
+          <th scope="row">{{ index }}</th>
+          {% for item in res[index] %}
+            <td>{{item}}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
 
 <script type="text/javascript">
   function lbtn(event){

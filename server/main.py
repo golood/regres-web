@@ -1,5 +1,5 @@
 import json
-from regres.regr import Task
+from regres.regr import Task, TaskPerebor
 
 
 class Data:
@@ -143,3 +143,26 @@ class Test:
 
     def getResaults(self):
         return self.tasks.getResaults()
+
+
+class TestT:
+
+    def __init__(self, data):
+        self._build(data)
+        self._run()
+
+    def _build(self, data):
+        self.tasks = TaskPerebor(x=data.x, y=data.y, massiv=self._initList(len(data.x)))
+
+    def _initList(self, len):
+        m = []
+        for item in range(len):
+            m.append(item)
+
+        return m
+
+    def _run(self):
+        self.tasks.run()
+
+    def getResaults(self):
+        return self.tasks.getResult()
