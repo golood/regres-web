@@ -66,11 +66,14 @@ class Method:
     def getSmeshenir(self):
         sum = 0
         m = len(self.x)
-        for item in self.x:
+        try:
+          for item in self.x:
             x = math.fsum(item) / len(item)
             sum += math.fabs((self._minusAlfa() * x) / (self.a[0] * x)) / m
 
-        return sum * 100
+          return sum * 100
+        except ZeroDivisionError:
+          return 'Infinity'
 
     def _minusAlfa(self):
         a = self.a[0]

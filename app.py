@@ -45,6 +45,8 @@ def upload_file():
 
             data = Data(json.loads(session['data']))
             data.loadMatrix = load_matrix
+            data.h2_index = None
+            data.h1_index = None
             session['data'] = json.dumps(data, cls=DataEncoder)
 
             return render_template('load_file.html', data=load_matrix, dataLen=range(len(load_matrix[0])),
