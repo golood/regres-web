@@ -31,7 +31,8 @@ def main():
 
 @app.route('/load', methods=['GET', 'POST'])
 def upload_file():
-    if request.method == 'POST':
+    try:
+      if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -52,14 +53,17 @@ def upload_file():
             return render_template('load_file.html', data=load_matrix, dataLen=range(len(load_matrix[0])),
                                    dataRowLen=range(len(load_matrix)))
 
-    data = Data(json.loads(session['data']))
+      data = Data(json.loads(session['data']))
 
-    if request.args:
-      data.freeChlen = utill.get_value_checkbox(request.args['free_chlen'])
+      if request.args:
+        data.freeChlen = utill.get_value_checkbox(request.args['free_chlen'])
 
-    session['data'] = json.dumps(data, cls=DataEncoder)
+      session['data'] = json.dumps(data, cls=DataEncoder)
 
-    return render_template('load_file.html')
+      return render_template('load_file.html')
+
+    except Exception as e:
+      return render_template('error.html', e=e)
 
 
 @app.route('/uploads/<filename>')
@@ -74,6 +78,7 @@ def hello(name=None):
 
 @app.route('/key', methods=['POST'])
 def getKey():
+  try:
     var_y = request.form['var_y']
 
     data = Data(json.loads(session['data']))
@@ -84,16 +89,22 @@ def getKey():
 
     return redirect(url_for('div_matrix'))
 
+  except Exception as e:
+      return render_template('error.html', e=e)
+
 @app.route('/div')
 def div_matrix():
-
+  try:
     data = Data(json.loads(session['data']))
 
     return render_template('div_matrix.html', xLen=range(len(data.x)),
                            h1=data.h1_index, h2=data.h2_index)
+  except Exception as e:
+      return render_template('error.html', e=e)
 
 @app.route('/answer', methods=['POST'])
 def answer():
+  try:
     data = Data(json.loads(session['data']))
 
     h1_index = list(map(lambda x: int(x), request.json['h1']))
@@ -108,18 +119,24 @@ def answer():
     session['data'] = json.dumps(data, cls=DataEncoder)
 
     return Response(status=200)
+  except Exception as e:
+      return render_template('error.html', e=e)
 
 @app.route('/answer', methods=['GET'])
 def answer1():
+  try:
     data = Data(json.loads(session['data']))
 
     return render_template('answer.html',
                            data=data,
                            aLen=range(len(data.results[0][0])),
                            epsLen=range(len(data.results[0][1])))
+  except Exception as e:
+      return render_template('error.html', e=e)
 
 @app.route('/auto')
 def auto():
+  try:
     data = Data(json.loads(session['data']))
 
     test = TestT(data)
@@ -140,6 +157,8 @@ def auto():
     return render_template('div_matrix.html', xLen=range(len(data.x)),
                            h1=data.h1_index, h2=data.h2_index, auto=True, res=result,
                            resLen=range(len(res)))
+  except Exception as e:
+      return render_template('error.html', e=e)
 
 if __name__ == '__main__':
     # Will make the server available externally as well
