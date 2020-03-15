@@ -9,4 +9,6 @@ def format_numbers(values):
     return list(map(lambda x: float('{:.2f}'.format(x)), values))
 
 def format_number(value):
+    if value == 'Infinity':
+        return value
     return float('{:.2f}'.format(value))
