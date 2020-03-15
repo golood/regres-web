@@ -3,7 +3,7 @@ import json
 import os
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, escape, session, Response
 from werkzeug.utils import secure_filename
-from server.main import Data, DataEncoder, Test
+from server.main import Data, DataEncoder, Test, TestT
 import server.utill as utill
 
 app = Flask(__name__)
@@ -22,7 +22,7 @@ def allowed_file(filename):
 @app.route('/')
 def main():
     data = None
-    if (session['data']):
+    if ('data' in session):
         data = Data(json.loads(session['data']))
     else:
       session['data'] = json.dumps(Data(None), cls=DataEncoder)
@@ -115,6 +115,29 @@ def answer1():
                            data=data,
                            aLen=range(len(data.results[0][0])),
                            epsLen=range(len(data.results[0][1])))
+
+@app.route('/auto')
+def auto():
+    data = Data(json.loads(session['data']))
+
+    test = TestT(data)
+    res = test.getResaults()
+
+    result = []
+    for item in res:
+        line = []
+        line.append(item[0][0])
+        line.append(item[0][1])
+        line.append(item[0][2])
+        line.append(item[1])
+        line.append(item[2])
+        line.append(item[3])
+        result.append(line)
+
+
+    return render_template('div_matrix.html', xLen=range(len(data.x)),
+                           h1=data.h1_index, h2=data.h2_index, auto=True, res=result,
+                           resLen=range(len(res)))
 
 if __name__ == '__main__':
     # Will make the server available externally as well
