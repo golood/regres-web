@@ -163,12 +163,42 @@ def auto():
         line.append(item[3])
         result.append(line)
 
+    session['bias_estimates'] = result
 
     return render_template('div_matrix.html', xLen=range(len(data.x)),
                            h1=data.h1_index, h2=data.h2_index, auto=True, res=result,
                            resLen=range(len(res)))
   except Exception as e:
       return render_template('error.html', e=e)
+
+@app.route('/biasEstimates')
+def bias_astimates():
+    try:
+        if 'bias_estimates' in session:
+            result = session['bias_estimates']
+        else:
+            data = Data(json.loads(session['data']))
+
+            test = TestT(data)
+            res = test.getResaults()
+
+            result = []
+            for item in res:
+                line = []
+                line.append(utill.format_numbers(item[0][0]))
+                line.append(utill.format_numbers(item[0][1]))
+                line.append(utill.format_number(item[0][2]))
+                line.append(utill.format_number(item[1]))
+                line.append(item[2])
+                line.append(item[3])
+                result.append(line)
+
+            session['bias_estimates'] = result
+
+        return render_template('bias_estimates.html', auto=True, res=result,
+                               resLen=range(len(result)))
+    except Exception as e:
+        return render_template('error.html', e=e)
 
 if __name__ == '__main__':
     # Will make the server available externally as well
