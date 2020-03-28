@@ -46,7 +46,7 @@
       {% for index in dataRowLen %}
         <tr>
           <th scope="row">{{ index }}</th>
-          {% for item in data[index] %}
+          {% for item in data[index-1] %}
             <td>{{item}}</td>
           {% endfor %}
         </tr>

@@ -52,8 +52,9 @@ def upload_file():
             data.h1_index = None
             session['data'] = json.dumps(data, cls=DataEncoder)
 
-            return render_template('load_file.html', data=load_matrix, dataLen=range(len(load_matrix[0])),
-                                   dataRowLen=range(len(load_matrix)))
+            return render_template('load_file.html', data=load_matrix,
+                                   dataLen=range(1, len(load_matrix[0])+1),
+                                   dataRowLen=range(1, len(load_matrix)+1))
 
       data = Data(json.loads(session['data']))
 
@@ -93,7 +94,7 @@ def getKey():
     elif int(var_y) < 0:
         return render_template('error.html', e='Значение индекса не может быть отрицательным!')
 
-    data.set_y(int(var_y))
+    data.set_y(int(var_y)-1)
 
     session['data'] = json.dumps(data, cls=DataEncoder)
 
@@ -107,7 +108,7 @@ def div_matrix():
   try:
     data = Data(json.loads(session['data']))
 
-    return render_template('div_matrix.html', xLen=range(len(data.x)),
+    return render_template('div_matrix.html', xLen=range(1, len(data.x)+1),
                            h1=data.h1_index, h2=data.h2_index)
   except Exception as e:
       return render_template('error.html', e=e)
@@ -137,10 +138,14 @@ def answer1():
   try:
     data = Data(json.loads(session['data']))
 
+    if data.freeChlen:
+        aLen = range(len(data.results[0][0]))
+    else:
+        aLen = range(1, len(data.results[0][0])+1)
     return render_template('answer.html',
                            data=data,
-                           aLen=range(len(data.results[0][0])),
-                           epsLen=range(len(data.results[0][1])))
+                           aLen=aLen,
+                           epsLen=range(1, len(data.results[0][1])+1))
   except Exception as e:
       return render_template('error.html', e=e)
 
@@ -159,15 +164,15 @@ def auto():
         line.append(utill.format_numbers(item[0][1]))
         line.append(utill.format_number(item[0][2]))
         line.append(utill.format_number(item[1]))
-        line.append(item[2])
-        line.append(item[3])
+        line.append(utill.appendOneForNumber(item[2]))
+        line.append(utill.appendOneForNumber(item[3]))
         result.append(line)
 
     session['bias_estimates'] = result
 
-    return render_template('div_matrix.html', xLen=range(len(data.x)),
+    return render_template('div_matrix.html', xLen=range(1, len(data.x)+1),
                            h1=data.h1_index, h2=data.h2_index, auto=True, res=result,
-                           resLen=range(len(res)))
+                           resLen=range(1, len(res)+1))
   except Exception as e:
       return render_template('error.html', e=e)
 
@@ -189,8 +194,8 @@ def bias_astimates():
                 line.append(utill.format_numbers(item[0][1]))
                 line.append(utill.format_number(item[0][2]))
                 line.append(utill.format_number(item[1]))
-                line.append(item[2])
-                line.append(item[3])
+                line.append(utill.appendOneForNumber(item[2]))
+                line.append(utill.appendOneForNumber(item[3]))
                 result.append(line)
 
             session['bias_estimates'] = result
