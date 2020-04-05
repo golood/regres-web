@@ -81,7 +81,8 @@ def upload_file():
                                    data=load_matrix,
                                    dataLen=range(1, len(load_matrix[0])+1),
                                    dataRowLen=range(1, len(load_matrix)+1),
-                                   meta_data=meta_data)
+                                   meta_data=meta_data,
+                                   verification=len(load_matrix) > len(load_matrix[0]))
 
       meta_data = MetaData(json.loads(session['meta_data']))
 

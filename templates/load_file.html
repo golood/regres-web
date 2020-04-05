@@ -59,13 +59,17 @@
   </div>
 
   <br/>
-
+  {% if not verification %}
+    <div class="p-3 mb-2 bg-danger text-white">Внимание! Параметров больше, чем наблюдений. Загрузите другие данные!</div>
+    <br/>
+  {% else %}
   <div>Введите индекс столбца для выбора зависимой переменной.</div>
   <form action="/key" method="post">
     <input class="form-control" name="var_y" type="number" placeholder="Default input">
     <br>
     <button type="submit" class="btn btn-primary">Подготовить матрицы N1 и N2</button>
   </form>
+  {% endif %}
 {% endif %}
 </div>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
