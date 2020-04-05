@@ -168,7 +168,8 @@ def div_matrix():
                              xLen=range(1, meta_data.len_work_matrix + 1),
                              h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
                              h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
-                             meta_data=meta_data)
+                             meta_data=meta_data,
+                             verification=meta_data.len_work_matrix/2 > meta_data.len_x_work_matrix)
   except Exception as e:
       return render_template('error.html', e=e)
 
