@@ -132,12 +132,12 @@ class TaskRes:
 
 class Test:
 
-    def __init__(self, x=None, y=None, h1=None, h2=None):
-        self._build(x, y, h1, h2)
+    def __init__(self, tasks=None, x=None, y=None, h1=None, h2=None):
+        self._build(tasks, x, y, h1, h2)
         self._run()
 
-    def _build(self, x, y, h1, h2):
-        self.tasks = Task(x=x, y=y, h1=h1, h2=h2)
+    def _build(self, tasks, x, y, h1, h2):
+        self.tasks = Task(tasks=tasks, x=x, y=y, h1=h1, h2=h2)
 
     def _run(self):
         self.tasks.run()

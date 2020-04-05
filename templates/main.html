@@ -26,60 +26,26 @@
   </li>
 </ul>
 <div class="py-3 px-lg-5">
-{#<h1>Загрузите данные</h1>#}
-{#<form action="" method=post enctype=multipart/form-data>#}
-{#  <p><input type=file name=file>#}
-{#  <input type=submit value=Загрузить>#}
-{#</form>#}
-{#{% if data %}#}
-{#  <div style="height: 500px" class="table-responsive">#}
-{#  <table class="table table-sm table-striped table-bordered">#}
-{#    <thead> <!-- Column names -->#}
-{#      <tr>#}
-{#        <th scope="col">#</th>#}
-{#        {% for item in dataLen %}#}
-{#          <th scope="col">x{{ item }}</th>#}
-{#        {% endfor %}#}
-{#      </tr>#}
-{#    </thead>#}
-{#    <tbody> <!-- Data -->#}
-{#      {% for index in dataRowLen %}#}
-{#        <tr>#}
-{#          <th scope="row">{{ index }}</th>#}
-{#          {% for item in data[index] %}#}
-{#            <td>{{item}}</td>#}
-{#          {% endfor %}#}
-{#        </tr>#}
-{#      {% endfor %}#}
-{#    </tbody>#}
-{#  </table>#}
-{#  </div>#}
-{##}
-{#  <br/>#}
-{##}
-{#  <form action="/key" method="POST">#}
-{#    <input class="form-control" name="var_y" type="number" placeholder="Default input">#}
-{#    <button type="submit" class="btn btn-primary">Submit</button>#}
-{#  </form>#}
-{#{% endif %}#}
 
-<form action="/load" method="get">
+<p>Методы решения задачи:</p>
+<form name="setParam" action="/load" method="get" onsubmit="return validForm()">
   <div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" name="check_MNK" checked="true" disabled>
+    <input type="checkbox" class="form-check-input" name="check_MNK" checked>
     <label class="form-check-label" for="exampleCheck1">МНК</label>
   </div>
   <div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" name="check_MNM" checked="true" disabled>
+    <input type="checkbox" class="form-check-input" name="check_MNM" checked>
     <label class="form-check-label" for="exampleCheck1">МНМ</label>
   </div>
   <div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" name="check_MAO" checked="true" disabled>
+    <input type="checkbox" class="form-check-input" name="check_MAO" checked>
     <label class="form-check-label" for="exampleCheck1">МАО</label>
   </div>
   <div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" name="check_MCO" checked="true" disabled>
+    <input type="checkbox" class="form-check-input" name="check_MCO" checked>
     <label class="form-check-label" for="exampleCheck1">МСО</label>
   </div>
+
   <br/>
   <div class="form-group form-check">
     <input type="checkbox" class="form-check-input" name="free_chlen" {% if data %}{% if data.freeChlen == True %}checked="true"{% endif %}{% endif %}>
@@ -88,6 +54,50 @@
   <button type="submit" class="btn btn-primary">Загрузить исходные данные</button>
 </form>
 </div>
+
+<div class="modal fade" id="DialogNoValidData" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Внимание!</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Необходимо выбрать хотя бы один метод решения задачи.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    function validForm()
+    {
+        var form = document.forms["setParam"]
+
+        if (form['check_MNK'].checked
+            || form['check_MNM'].checked
+            || form['check_MAO'].checked
+            || form['check_MCO'].checked)
+        {
+            return true;
+        }
+        options = {
+            backdrop: 'static',
+            keyboard: true,
+            focus: true,
+            show: true
+        }
+
+        $('#DialogNoValidData').modal(options)
+        return false
+
+    }
+</script>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>

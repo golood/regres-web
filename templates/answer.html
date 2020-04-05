@@ -38,30 +38,14 @@
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <th scope="row">МНК</th>
-      {% for item in data.results[0][0] %}
-      <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
-    <tr>
-      <th scope="row">МНМ</th>
-      {% for item in data.results[1][0] %}
-      <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
-    <tr>
-      <th scope="row">МАО</th>
-      {% for item in data.results[2][0] %}
-      <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
-    <tr>
-      <th scope="row">МСО</th>
-      {% for item in data.results[3][0] %}
-      <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
+    {% for task in data.results %}
+      <tr>
+        <th scope="row">{{ task[0] }}</th>
+        {% for item in task[1][0] %}
+          <td>{{ '{:.3f}'.format(item) }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
   </tbody>
 </table>
 
@@ -76,30 +60,14 @@
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <th scope="row">МНК</th>
-      {% for item in data.results[0][1] %}
-        <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
-    <tr>
-      <th scope="row">МНМ</th>
-      {% for item in data.results[1][1] %}
-        <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
-    <tr>
-      <th scope="row">МАО</th>
-      {% for item in data.results[2][1] %}
-        <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
-    <tr>
-      <th scope="row">МСО</th>
-      {% for item in data.results[3][1] %}
-        <td>{{ '{:.3f}'.format(item) }}</td>
-      {% endfor %}
-    </tr>
+    {% for task in data.results %}
+      <tr>
+        <th scope="row">{{ task[0] }}</th>
+        {% for item in task[1][1] %}
+          <td>{{ '{:.3f}'.format(item) }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
   </tbody>
 </table>
 
@@ -112,22 +80,12 @@
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <th scope="row">МНК</th>
-      <td>{{ '{:.2f}'.format(data.results[0][2]) }}</td>
-    </tr>
-    <tr>
-      <th scope="row">МНМ</th>
-      <td>{{ '{:.2f}'.format(data.results[1][2]) }}</td>
-    </tr>
-    <tr>
-      <th scope="row">МАО</th>
-      <td>{{ '{:.2f}'.format(data.results[2][2]) }}</td>
-    </tr>
-    <tr>
-      <th scope="row">МСО</th>
-      <td>{{ '{:.2f}'.format(data.results[3][2]) }}</td>
-    </tr>
+    {% for task in data.results %}
+      <tr>
+        <th scope="row">{{ task[0] }}</th>
+          <td>{{ '{:.2f}'.format(task[1][2]) }}</td>
+      </tr>
+    {% endfor %}
   </tbody>
 </table>
 </div>

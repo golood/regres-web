@@ -102,6 +102,9 @@ class MNK(Method):
             self.eps.append(item)
         self.e = self.Epselon(self.a)
 
+    def getResaul(self):
+        return 'МНК', super().getResaul()
+
 
 class MNM(Method):
 
@@ -117,6 +120,9 @@ class MNM(Method):
         self.a, self.eps = task.getResault()
         self.e = self.Epselon(self.a)
 
+    def getResaul(self):
+        return 'МНМ', super().getResaul()
+
 
 class MAO(Method):
 
@@ -131,6 +137,10 @@ class MAO(Method):
         task.run()
         self.a, self.eps = task.getResault()
         self.e = self.Epselon(self.a)
+
+    def getResaul(self):
+        return 'МАО', super().getResaul()
+
 
 class MCO(Method):
 
@@ -148,15 +158,22 @@ class MCO(Method):
         self.a, self.eps = task.getResault()
         self.e = self.Epselon(self.a)
 
+    def getResaul(self):
+        return 'МСО', super().getResaul()
+
 
 class Task:
 
-    def __init__(self, x, y, h1=None, h2=None):
+    def __init__(self, tasks, x, y, h1=None, h2=None):
         self.methods = []
-        self.methods.append(MNK(x, y))
-        self.methods.append(MNM(x, y))
-        self.methods.append(MAO(x, y))
-        self.methods.append(MCO(x, y, h1, h2))
+        if (tasks[0]):
+          self.methods.append(MNK(x, y))
+        if (tasks[1]):
+          self.methods.append(MNM(x, y))
+        if (tasks[2]):
+          self.methods.append(MAO(x, y))
+        if (tasks[3]):
+          self.methods.append(MCO(x, y, h1, h2))
 
     def run(self):
 

@@ -12,6 +12,12 @@ class MetaData:
         if data == None:
             self.session_id = None
             self.user_session_id = None
+
+            self.mnk = False
+            self.mnm = False
+            self.mao = False
+            self.mco = False
+
             self.freeChlen = False
             self.file_id = None
             self.load_matrix_id = None
@@ -32,6 +38,12 @@ class MetaData:
         else:
             self.session_id = data['session_id']
             self.user_session_id = data['user_session_id']
+
+            self.mnk = data['mnk']
+            self.mnm = data['mnm']
+            self.mao = data['mao']
+            self.mco = data['mco']
+
             self.freeChlen = data['freeChlen']
             self.file_id = data['file_id']
             self.load_matrix_id = data['load_matrix_id']
@@ -156,6 +168,9 @@ class MetaData:
 
         self.index_h1 = matrixRepo.setRow(h1)
         self.index_h2 = matrixRepo.setRow(h2)
+
+    def getCheckTask(self):
+        return [self.mnk, self.mnm, self.mao, self.mco]
 
     def updateTimeActiv(self):
         user_session_db = db.UserSessionRepo()

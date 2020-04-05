@@ -82,12 +82,35 @@ def upload_file():
 
       meta_data = MetaData(json.loads(session['meta_data']))
 
-      if request.args:
-        meta_data.freeChlen = utill.get_value_checkbox(request.args['free_chlen'])
+      if 'free_chlen' in request.args:
+          meta_data.freeChlen = True
       else:
           meta_data.freeChlen = False
+      if 'check_MNK' in request.args:
+          meta_data.mnk = True
+      else:
+          meta_data.mnk = False
+      if 'check_MNM' in request.args:
+          meta_data.mnm = True
+      else:
+          meta_data.mnm = False
+      if 'check_MAO' in request.args:
+          meta_data.mao = True
+      else:
+          meta_data.mao = False
+      if 'check_MCO' in request.args:
+          meta_data.mco = True
+      else:
+          meta_data.mco = False
 
       session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+
+      if meta_data.load_matrix_id:
+          matrix = meta_data.getMetrix(meta_data.load_matrix_id)
+          return render_template('load_file.html',
+                                 data=matrix,
+                                 dataLen=range(1, len(matrix[0]) + 1),
+                                 dataRowLen=range(1, len(matrix) + 1))
 
       return render_template('load_file.html')
 
@@ -149,6 +172,7 @@ def answer():
       meta_data.setH1H2(h1_index, h2_index)
 
       test = Test(
+          tasks=meta_data.getCheckTask(),
           x=meta_data.getMetrix(meta_data.matrix_x_index),
           y=meta_data.getRow(meta_data.matrix_y_index),
           h1=meta_data.getRow(meta_data.index_h1),
@@ -172,13 +196,13 @@ def answer1():
       data = Data(json.loads(session['data']))
 
       if meta_data.freeChlen:
-          aLen = range(len(data.results[0][0]))
+          aLen = range(len(data.results[0][1][0]))
       else:
-          aLen = range(1, len(data.results[0][0])+1)
+          aLen = range(1, len(data.results[0][1][0])+1)
       return render_template('answer.html',
                            data=data,
                            aLen=aLen,
-                           epsLen=range(1, len(data.results[0][1])+1))
+                           epsLen=range(1, len(data.results[0][1][1])+1))
   except Exception as e:
       return render_template('error.html', e=e)
 
@@ -197,9 +221,9 @@ def auto():
     result = []
     for item in res:
         line = []
-        line.append(utill.format_numbers(item[0][0]))
-        line.append(utill.format_numbers(item[0][1]))
-        line.append(utill.format_number(item[0][2]))
+        line.append(utill.format_numbers(item[0][1][0]))
+        line.append(utill.format_numbers(item[0][1][1]))
+        line.append(utill.format_number(item[0][1][2]))
         line.append(utill.format_number(item[1]))
         line.append(utill.appendOneForNumber(item[2]))
         line.append(utill.appendOneForNumber(item[3]))
@@ -230,9 +254,9 @@ def bias_astimates():
         result = []
         for item in res:
             line = []
-            line.append(utill.format_numbers(item[0][0]))
-            line.append(utill.format_numbers(item[0][1]))
-            line.append(utill.format_number(item[0][2]))
+            line.append(utill.format_numbers(item[0][1][0]))
+            line.append(utill.format_numbers(item[0][1][1]))
+            line.append(utill.format_number(item[0][1][2]))
             line.append(utill.format_number(item[1]))
             line.append(utill.appendOneForNumber(item[2]))
             line.append(utill.appendOneForNumber(item[3]))
