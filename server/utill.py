@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+import hashlib
 
 def get_value_checkbox(value):
     if value == 'on':
@@ -11,7 +13,10 @@ def format_numbers(values):
 def format_number(value):
     if value == 'Infinity':
         return value
-    return float('{:.2f}'.format(value))
+    return float('{:.2f}'.format(float(value)))
+
+def formatToInt(values):
+    return list(map(lambda x: int(x), values))
 
 def appendOneForNumber(massiv):
     '''
@@ -21,3 +26,8 @@ def appendOneForNumber(massiv):
     :return: массив чисел.
     '''
     return list(map(lambda x: x+1, massiv))
+
+def generateSessionId(s):
+    hash_object = hashlib.md5(s.encode())
+
+    return hash_object.hexdigest()

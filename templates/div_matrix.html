@@ -22,7 +22,7 @@
     <a class="nav-link" href="/answer">Результаты решения</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link {% if 'bias_estimates' not in session %}disabled{% endif %}" href="/biasEstimates">Оценки критерия смещения</a>
+    <a class="nav-link" href="/biasEstimates">Оценки критерия смещения</a>
   </li>
 </ul>
 
@@ -130,7 +130,7 @@
       elem.setAttribute('type', "button");
       elem.setAttribute('class', "list-group-item list-group-item-action");
       elem.setAttribute('value', event.value);
-      elem.innerHTML = event.value;
+      elem.innerHTML = event.innerText;
 
       document.getElementById('r_group').append(elem);
   }
@@ -143,7 +143,7 @@
       elem.setAttribute('type', "button");
       elem.setAttribute('class', "list-group-item list-group-item-action");
       elem.setAttribute('value', event.value);
-      elem.innerHTML = event.value;
+      elem.innerHTML = event.innerText;
 
       document.getElementById('l_group').append(elem);
   }
