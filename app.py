@@ -205,8 +205,12 @@ def auto():
         line.append(utill.appendOneForNumber(item[3]))
         result.append(line)
 
-    return render_template('div_matrix.html', xLen=range(1, meta_data.len_x_work_matrix),
-                           h1=meta_data.index_h1, h2=meta_data.index_h2, auto=True, res=result,
+    return render_template('div_matrix.html',
+                           xLen=range(1, meta_data.len_work_matrix + 1),
+                           h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
+                           h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
+                           auto=True,
+                           res=result,
                            resLen=range(1, len(res)+1))
   except Exception as e:
       return render_template('error.html', e=e)
