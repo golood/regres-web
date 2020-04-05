@@ -86,6 +86,8 @@
 <br/><br/>
 <a class="btn btn-primary" href="/auto" role="button">Посчитать оценки критерия смещения</a>
 
+<button type="button" class="btn btn-primary" onclick="autoRender(this)">Автоматически распределить N1,N2</button>
+
 <button type="button" class="btn btn-primary" onclick="send(this)">Готово</button>
 
 <a id="btn_answer" class="btn btn-primary" href="/answer" role="button" hidden="true">Получить решение</a>
@@ -154,6 +156,21 @@
       elem.innerHTML = event.innerText;
 
       document.getElementById('l_group').append(elem);
+  }
+
+  function autoRender(event) {
+      var r = document.getElementById('r_group').children;
+      var l = document.getElementById('l_group').children;
+
+      if (r.length == l.length || r.length-l.length == 1 || r.length-l.length == -1)
+      {
+          return;
+      } else {
+          for (var i = 0; i < l.length; i++)
+          {
+              lbtn(l[i]);
+          }
+      }
   }
 
   function send(event) {
