@@ -151,6 +151,17 @@ class MetaData:
                 index += 1
             x.append(line)
 
+        if self.freeChlen:
+            new_x = []
+            for items in x:
+                line = [1]
+                for item in items:
+                    line.append(item)
+                new_x.append(line)
+
+            self.matrix_x_index = matrixRepo.addMatrix(new_x)
+            return
+
         self.matrix_x_index = matrixRepo.addMatrix(x)
 
     def getMetrix(self, matrixId):
