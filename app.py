@@ -52,7 +52,8 @@ def main():
 
     session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
 
-    return render_template('main.html', data=meta_data)
+    return render_template('main.html',
+                           data=meta_data)
 
 @app.route('/load', methods=['GET', 'POST'])
 @update_time_active
@@ -76,9 +77,11 @@ def upload_file():
 
             session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
 
-            return render_template('load_file.html', data=load_matrix,
+            return render_template('load_file.html',
+                                   data=load_matrix,
                                    dataLen=range(1, len(load_matrix[0])+1),
-                                   dataRowLen=range(1, len(load_matrix)+1))
+                                   dataRowLen=range(1, len(load_matrix)+1),
+                                   meta_data=meta_data)
 
       meta_data = MetaData(json.loads(session['meta_data']))
 
@@ -105,18 +108,25 @@ def upload_file():
 
       session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
 
-      if meta_data.load_matrix_id:
-          matrix = meta_data.getMetrix(meta_data.load_matrix_id)
-          return render_template('load_file.html',
-                                 data=matrix,
-                                 dataLen=range(1, len(matrix[0]) + 1),
-                                 dataRowLen=range(1, len(matrix) + 1))
-
-      return render_template('load_file.html')
+      return render_template('load_file.html',
+                             meta_data=meta_data)
 
     except Exception as e:
       return render_template('error.html', e=e)
 
+@app.route('/matrix')
+def show_matrix():
+    try:
+        meta_data = getMetaData()
+        load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
+
+        return render_template('matrix.html',
+                               data=load_matrix,
+                               dataLen=range(1, len(load_matrix[0]) + 1),
+                               dataRowLen=range(1, len(load_matrix) + 1),
+                               meta_data=meta_data)
+    except Exception as e:
+        return render_template('error.html', e=e)
 
 @app.route('/uploads/<filename>')
 @update_time_active
@@ -156,7 +166,8 @@ def div_matrix():
       return render_template('div_matrix.html',
                              xLen=range(1, meta_data.len_work_matrix + 1),
                              h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
-                             h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)))
+                             h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
+                             meta_data=meta_data)
   except Exception as e:
       return render_template('error.html', e=e)
 
@@ -200,9 +211,10 @@ def answer1():
       else:
           aLen = range(1, len(data.results[0][1][0])+1)
       return render_template('answer.html',
-                           data=data,
-                           aLen=aLen,
-                           epsLen=range(1, len(data.results[0][1][1])+1))
+                             data=data,
+                             aLen=aLen,
+                             epsLen=range(1, len(data.results[0][1][1])+1),
+                             meta_data=meta_data)
   except Exception as e:
       return render_template('error.html', e=e)
 
@@ -235,7 +247,8 @@ def auto():
                            h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
                            auto=True,
                            res=result,
-                           resLen=range(1, len(res)+1))
+                           resLen=range(1, len(res)+1),
+                           meta_data=meta_data)
   except Exception as e:
       return render_template('error.html', e=e)
 
@@ -262,8 +275,11 @@ def bias_astimates():
             line.append(utill.appendOneForNumber(item[3]))
             result.append(line)
 
-        return render_template('bias_estimates.html', auto=True, res=result,
-                               resLen=range(len(result)))
+        return render_template('bias_estimates.html',
+                               auto=True,
+                               res=result,
+                               resLen=range(len(result)),
+                               meta_data=meta_data)
     except Exception as e:
         return render_template('error.html', e=e)
 

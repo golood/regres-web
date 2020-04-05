@@ -16,6 +16,9 @@
     <a class="nav-link" href="/load">Загрузить исходные данные</a>
   </li>
   <li class="nav-item">
+    <a class="nav-link {% if not meta_data.load_matrix_id %}disabled{% endif %}" href="/matrix">Загруженная матрица</a>
+  </li>
+  <li class="nav-item">
     <a class="nav-link active" href="/div">Разделить матрицу</a>
   </li>
   <li class="nav-item">
