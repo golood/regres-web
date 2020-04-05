@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import json
 from regres.regr import Task, TaskPerebor
 
@@ -131,12 +132,12 @@ class TaskRes:
 
 class Test:
 
-    def __init__(self, data):
-        self._build(data)
+    def __init__(self, x=None, y=None, h1=None, h2=None):
+        self._build(x, y, h1, h2)
         self._run()
 
-    def _build(self, data):
-        self.tasks = Task(x=data.x, y=data.y, h1=data.h1_index, h2=data.h2_index)
+    def _build(self, x, y, h1, h2):
+        self.tasks = Task(x=x, y=y, h1=h1, h2=h2)
 
     def _run(self):
         self.tasks.run()
@@ -147,12 +148,12 @@ class Test:
 
 class TestT:
 
-    def __init__(self, data):
-        self._build(data)
+    def __init__(self, x=None, y=None):
+        self._build(x, y)
         self._run()
 
-    def _build(self, data):
-        self.tasks = TaskPerebor(x=data.x, y=data.y, massiv=self._initList(len(data.x)))
+    def _build(self, x, y):
+        self.tasks = TaskPerebor(x=x, y=y, massiv=self._initList(len(x)))
 
     def _initList(self, len):
         m = []
