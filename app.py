@@ -37,6 +37,14 @@ def getMetaData():
 
         return meta_data
 
+def redirect_to_main(f):
+    @wraps(f)
+    def decorator_function(*args, **kwargs):
+        if 'meta_data' not in session:
+            return redirect(url_for('main'))
+        return f(*args, **kwargs)
+    return decorator_function
+
 def update_time_active(f):
     @wraps(f)
     def decorator_function(*args, **kwargs):
@@ -56,6 +64,7 @@ def main():
                            data=meta_data)
 
 @app.route('/load', methods=['GET', 'POST'])
+@redirect_to_main
 @update_time_active
 def upload_file():
     try:
@@ -116,6 +125,8 @@ def upload_file():
       return render_template('error.html', e=e)
 
 @app.route('/matrix')
+@redirect_to_main
+@update_time_active
 def show_matrix():
     try:
         meta_data = getMetaData()
@@ -130,12 +141,14 @@ def show_matrix():
         return render_template('error.html', e=e)
 
 @app.route('/uploads/<filename>')
+@redirect_to_main
 @update_time_active
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
 
 @app.route('/key', methods=['POST'])
+@redirect_to_main
 @update_time_active
 def getKey():
   try:
@@ -159,6 +172,7 @@ def getKey():
       return render_template('error.html', e=e)
 
 @app.route('/div')
+@redirect_to_main
 @update_time_active
 def div_matrix():
   try:
@@ -174,6 +188,7 @@ def div_matrix():
       return render_template('error.html', e=e)
 
 @app.route('/answer', methods=['POST'])
+@redirect_to_main
 @update_time_active
 def answer():
   try:
@@ -202,6 +217,7 @@ def answer():
       return render_template('error.html', e=e)
 
 @app.route('/answer', methods=['GET'])
+@redirect_to_main
 @update_time_active
 def answer1():
   try:
@@ -221,6 +237,7 @@ def answer1():
       return render_template('error.html', e=e)
 
 @app.route('/auto')
+@redirect_to_main
 @update_time_active
 def auto():
   try:
@@ -255,6 +272,7 @@ def auto():
       return render_template('error.html', e=e)
 
 @app.route('/biasEstimates')
+@redirect_to_main
 @update_time_active
 def bias_astimates():
     try:
