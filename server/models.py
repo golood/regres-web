@@ -35,6 +35,8 @@ class MetaData:
 
             self.index_h1 = None
             self.index_h2 = None
+
+            self.answer = False
         else:
             self.session_id = data['session_id']
             self.user_session_id = data['user_session_id']
@@ -61,6 +63,8 @@ class MetaData:
 
             self.index_h1 = data['index_h1']
             self.index_h2 = data['index_h2']
+
+            self.answer = data['answer']
 
     def addSession(self, session_id, ip):
         '''

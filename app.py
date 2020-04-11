@@ -209,6 +209,7 @@ def answer():
       data = Data(None)
       data.results = test.getResaults()
 
+      meta_data.answer = True
       session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
       session['data'] = json.dumps(data, cls=DataEncoder)
 

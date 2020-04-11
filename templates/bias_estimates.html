@@ -19,10 +19,10 @@
     <a class="nav-link {% if not meta_data.load_matrix_id %}disabled{% endif %}" href="/matrix">Загруженная матрица</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link {% if not meta_data.load_matrix_id %}disabled{% endif %}" href="/div">Разделить матрицу</a>
+    <a class="nav-link {% if not meta_data.index_y %}disabled{% endif %}" href="/div">Разделить матрицу</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link {% if not meta_data.index_h1 %}disabled{% endif %}" href="/answer">Результаты решения</a>
+    <a class="nav-link {% if not meta_data.answer == True %}disabled{% endif %}" href="/answer">Результаты решения</a>
   </li>
   <li class="nav-item">
     <a class="nav-link active" href="/biasEstimates">Оценки критерия смещения</a>
