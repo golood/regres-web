@@ -53,6 +53,14 @@ def update_time_active(f):
         return f(*args, **kwargs)
     return decorator_function
 
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('errors/500.html'), 500
+
+@app.errorhandler(404)
+def internal_server_error(e):
+    return render_template('errors/404.html'), 404
+
 @app.route('/')
 @update_time_active
 def main():
@@ -67,8 +75,7 @@ def main():
 @redirect_to_main
 @update_time_active
 def upload_file():
-    # try:
-      if request.method == 'POST':
+    if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
             meta_data = getMetaData()
@@ -93,52 +100,46 @@ def upload_file():
                                    meta_data=meta_data,
                                    verification=len(load_matrix) > len(load_matrix[0]))
 
-      meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(session['meta_data']))
 
-      if 'free_chlen' in request.args:
-          meta_data.freeChlen = True
-      else:
-          meta_data.freeChlen = False
-      if 'check_MNK' in request.args:
-          meta_data.mnk = True
-      else:
-          meta_data.mnk = False
-      if 'check_MNM' in request.args:
-          meta_data.mnm = True
-      else:
-          meta_data.mnm = False
-      if 'check_MAO' in request.args:
-          meta_data.mao = True
-      else:
-          meta_data.mao = False
-      if 'check_MCO' in request.args:
-          meta_data.mco = True
-      else:
-          meta_data.mco = False
+    if 'free_chlen' in request.args:
+        meta_data.freeChlen = True
+    else:
+        meta_data.freeChlen = False
+    if 'check_MNK' in request.args:
+        meta_data.mnk = True
+    else:
+        meta_data.mnk = False
+    if 'check_MNM' in request.args:
+        meta_data.mnm = True
+    else:
+        meta_data.mnm = False
+    if 'check_MAO' in request.args:
+        meta_data.mao = True
+    else:
+        meta_data.mao = False
+    if 'check_MCO' in request.args:
+        meta_data.mco = True
+    else:
+        meta_data.mco = False
 
-      session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+    session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
 
-      return render_template('load_file.html',
-                             meta_data=meta_data)
-
-    # except Exception as e:
-    #   return render_template('error.html', e=e)
+    return render_template('load_file.html',
+                            meta_data=meta_data)
 
 @app.route('/matrix')
 @redirect_to_main
 @update_time_active
 def show_matrix():
-    # try:
-        meta_data = getMetaData()
-        load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
+    meta_data = getMetaData()
+    load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
 
-        return render_template('matrix.html',
-                               data=load_matrix,
-                               dataLen=range(1, len(load_matrix[0]) + 1),
-                               dataRowLen=range(1, len(load_matrix) + 1),
-                               meta_data=meta_data)
-    # except Exception as e:
-    #     return render_template('error.html', e=e)
+    return render_template('matrix.html',
+                            data=load_matrix,
+                            dataLen=range(1, len(load_matrix[0]) + 1),
+                            dataRowLen=range(1, len(load_matrix) + 1),
+                            meta_data=meta_data)
 
 @app.route('/uploads/<filename>')
 @redirect_to_main
@@ -151,7 +152,6 @@ def uploaded_file(filename):
 @redirect_to_main
 @update_time_active
 def getKey():
-  # try:
     var_y = request.form['var_y']
     meta_data = MetaData(json.loads(session['meta_data']))
 
@@ -168,80 +168,67 @@ def getKey():
 
     return redirect(url_for('div_matrix'))
 
-  # except Exception as e:
-  #     return render_template('error.html', e=e)
-
 @app.route('/div')
 @redirect_to_main
 @update_time_active
 def div_matrix():
-  # try:
-      meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(session['meta_data']))
 
-      return render_template('div_matrix.html',
-                             xLen=range(1, meta_data.len_work_matrix + 1),
-                             h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
-                             h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
-                             meta_data=meta_data,
-                             verification=meta_data.len_work_matrix/2 > meta_data.len_x_work_matrix)
-  # except Exception as e:
-  #     return render_template('error.html', e=e)
+    return render_template('div_matrix.html',
+                            xLen=range(1, meta_data.len_work_matrix + 1),
+                            h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
+                            h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
+                            meta_data=meta_data,
+                            verification=meta_data.len_work_matrix/2 > meta_data.len_x_work_matrix)
 
 @app.route('/answer', methods=['POST'])
 @redirect_to_main
 @update_time_active
 def answer():
-  # try:
-      meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(session['meta_data']))
 
-      h1_index = list(map(lambda x: int(x), request.json['h1']))
-      h2_index = list(map(lambda x: int(x), request.json['h2']))
+    h1_index = list(map(lambda x: int(x), request.json['h1']))
+    h2_index = list(map(lambda x: int(x), request.json['h2']))
 
-      meta_data.setH1H2(h1_index, h2_index)
+    meta_data.setH1H2(h1_index, h2_index)
 
-      test = Test(
-          tasks=meta_data.getCheckTask(),
-          x=meta_data.getMetrix(meta_data.matrix_x_index),
-          y=meta_data.getRow(meta_data.matrix_y_index),
-          h1=meta_data.getRow(meta_data.index_h1),
-          h2=meta_data.getRow(meta_data.index_h2))
+    test = Test(
+        tasks=meta_data.getCheckTask(),
+        x=meta_data.getMetrix(meta_data.matrix_x_index),
+        y=meta_data.getRow(meta_data.matrix_y_index),
+        h1=meta_data.getRow(meta_data.index_h1),
+        h2=meta_data.getRow(meta_data.index_h2))
 
-      data = Data(None)
-      data.results = test.getResaults()
+    data = Data(None)
+    data.results = test.getResaults()
 
-      meta_data.answer = True
-      session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
-      session['data'] = json.dumps(data, cls=DataEncoder)
+    meta_data.answer = True
+    session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+    session['data'] = json.dumps(data, cls=DataEncoder)
 
-      return Response(status=200)
-  # except Exception as e:
-  #     return render_template('error.html', e=e)
+    return Response(status=200)
 
 @app.route('/answer', methods=['GET'])
 @redirect_to_main
 @update_time_active
 def answer1():
-  # try:
-      meta_data = MetaData(json.loads(session['meta_data']))
-      data = Data(json.loads(session['data']))
+    meta_data = MetaData(json.loads(session['meta_data']))
+    data = Data(json.loads(session['data']))
 
-      if meta_data.freeChlen:
-          aLen = range(len(data.results[0][1][0]))
-      else:
-          aLen = range(1, len(data.results[0][1][0])+1)
-      return render_template('answer.html',
-                             data=data,
-                             aLen=aLen,
-                             epsLen=range(1, len(data.results[0][1][1])+1),
-                             meta_data=meta_data)
-  # except Exception as e:
-  #     return render_template('error.html', e=e)
+    if meta_data.freeChlen:
+        aLen = range(len(data.results[0][1][0]))
+    else:
+        aLen = range(1, len(data.results[0][1][0])+1)
+    return render_template('answer.html',
+                            data=data,
+                            aLen=aLen,
+                            epsLen=range(1, len(data.results[0][1][1])+1),
+                            meta_data=meta_data)
 
 @app.route('/auto')
 @redirect_to_main
 @update_time_active
 def auto():
-  # try:
     meta_data = MetaData(json.loads(session['meta_data']))
 
     test = TestT(
@@ -269,40 +256,35 @@ def auto():
                            res=result,
                            resLen=range(1, len(res)+1),
                            meta_data=meta_data)
-  # except Exception as e:
-  #     return render_template('error.html', e=e)
 
 @app.route('/biasEstimates')
 @redirect_to_main
 @update_time_active
 def bias_astimates():
-    # try:
-        meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(session['meta_data']))
 
-        test = TestT(
-            x=meta_data.getMetrix(meta_data.matrix_x_index),
-            y=meta_data.getRow(meta_data.matrix_y_index))
+    test = TestT(
+        x=meta_data.getMetrix(meta_data.matrix_x_index),
+        y=meta_data.getRow(meta_data.matrix_y_index))
 
-        res = test.getResaults()
+    res = test.getResaults()
 
-        result = []
-        for item in res:
-            line = []
-            line.append(utill.format_numbers(item[0][1][0]))
-            line.append(utill.format_numbers(item[0][1][1]))
-            line.append(utill.format_number(item[0][1][2]))
-            line.append(utill.format_number(item[1]))
-            line.append(utill.appendOneForNumber(item[2]))
-            line.append(utill.appendOneForNumber(item[3]))
-            result.append(line)
+    result = []
+    for item in res:
+        line = []
+        line.append(utill.format_numbers(item[0][1][0]))
+        line.append(utill.format_numbers(item[0][1][1]))
+        line.append(utill.format_number(item[0][1][2]))
+        line.append(utill.format_number(item[1]))
+        line.append(utill.appendOneForNumber(item[2]))
+        line.append(utill.appendOneForNumber(item[3]))
+        result.append(line)
 
-        return render_template('bias_estimates.html',
-                               auto=True,
-                               res=result,
-                               resLen=range(len(result)),
-                               meta_data=meta_data)
-    # except Exception as e:
-    #     return render_template('error.html', e=e)
+    return render_template('bias_estimates.html',
+                            auto=True,
+                            res=result,
+                            resLen=range(len(result)),
+                            meta_data=meta_data)
 
 if __name__ == '__main__':
     # Will make the server available externally as well
