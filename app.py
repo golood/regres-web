@@ -67,7 +67,7 @@ def main():
 @redirect_to_main
 @update_time_active
 def upload_file():
-    try:
+    # try:
       if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
@@ -121,14 +121,14 @@ def upload_file():
       return render_template('load_file.html',
                              meta_data=meta_data)
 
-    except Exception as e:
-      return render_template('error.html', e=e)
+    # except Exception as e:
+    #   return render_template('error.html', e=e)
 
 @app.route('/matrix')
 @redirect_to_main
 @update_time_active
 def show_matrix():
-    try:
+    # try:
         meta_data = getMetaData()
         load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
 
@@ -137,8 +137,8 @@ def show_matrix():
                                dataLen=range(1, len(load_matrix[0]) + 1),
                                dataRowLen=range(1, len(load_matrix) + 1),
                                meta_data=meta_data)
-    except Exception as e:
-        return render_template('error.html', e=e)
+    # except Exception as e:
+    #     return render_template('error.html', e=e)
 
 @app.route('/uploads/<filename>')
 @redirect_to_main
@@ -151,7 +151,7 @@ def uploaded_file(filename):
 @redirect_to_main
 @update_time_active
 def getKey():
-  try:
+  # try:
     var_y = request.form['var_y']
     meta_data = MetaData(json.loads(session['meta_data']))
 
@@ -168,14 +168,14 @@ def getKey():
 
     return redirect(url_for('div_matrix'))
 
-  except Exception as e:
-      return render_template('error.html', e=e)
+  # except Exception as e:
+  #     return render_template('error.html', e=e)
 
 @app.route('/div')
 @redirect_to_main
 @update_time_active
 def div_matrix():
-  try:
+  # try:
       meta_data = MetaData(json.loads(session['meta_data']))
 
       return render_template('div_matrix.html',
@@ -184,14 +184,14 @@ def div_matrix():
                              h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
                              meta_data=meta_data,
                              verification=meta_data.len_work_matrix/2 > meta_data.len_x_work_matrix)
-  except Exception as e:
-      return render_template('error.html', e=e)
+  # except Exception as e:
+  #     return render_template('error.html', e=e)
 
 @app.route('/answer', methods=['POST'])
 @redirect_to_main
 @update_time_active
 def answer():
-  try:
+  # try:
       meta_data = MetaData(json.loads(session['meta_data']))
 
       h1_index = list(map(lambda x: int(x), request.json['h1']))
@@ -214,14 +214,14 @@ def answer():
       session['data'] = json.dumps(data, cls=DataEncoder)
 
       return Response(status=200)
-  except Exception as e:
-      return render_template('error.html', e=e)
+  # except Exception as e:
+  #     return render_template('error.html', e=e)
 
 @app.route('/answer', methods=['GET'])
 @redirect_to_main
 @update_time_active
 def answer1():
-  try:
+  # try:
       meta_data = MetaData(json.loads(session['meta_data']))
       data = Data(json.loads(session['data']))
 
@@ -234,14 +234,14 @@ def answer1():
                              aLen=aLen,
                              epsLen=range(1, len(data.results[0][1][1])+1),
                              meta_data=meta_data)
-  except Exception as e:
-      return render_template('error.html', e=e)
+  # except Exception as e:
+  #     return render_template('error.html', e=e)
 
 @app.route('/auto')
 @redirect_to_main
 @update_time_active
 def auto():
-  try:
+  # try:
     meta_data = MetaData(json.loads(session['meta_data']))
 
     test = TestT(
@@ -269,14 +269,14 @@ def auto():
                            res=result,
                            resLen=range(1, len(res)+1),
                            meta_data=meta_data)
-  except Exception as e:
-      return render_template('error.html', e=e)
+  # except Exception as e:
+  #     return render_template('error.html', e=e)
 
 @app.route('/biasEstimates')
 @redirect_to_main
 @update_time_active
 def bias_astimates():
-    try:
+    # try:
         meta_data = MetaData(json.loads(session['meta_data']))
 
         test = TestT(
@@ -301,8 +301,8 @@ def bias_astimates():
                                res=result,
                                resLen=range(len(result)),
                                meta_data=meta_data)
-    except Exception as e:
-        return render_template('error.html', e=e)
+    # except Exception as e:
+    #     return render_template('error.html', e=e)
 
 if __name__ == '__main__':
     # Will make the server available externally as well
