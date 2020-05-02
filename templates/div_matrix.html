@@ -5,6 +5,16 @@
   <meta charset="UTF-8">
 
   <title>Решение регрессионных уравнений</title>
+
+ {% if isRun == True %}
+    <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    <script type="text/javascript">
+       function funonload() {
+           let timerId = setInterval(check, 3000);
+       }
+window.onload = funonload;
+</script>
+ {% endif %}
 </head>
 <body>
 <!-- Выпадающее меню -->
@@ -92,8 +102,74 @@
 
 <a id="btn_answer" class="btn btn-primary" href="/answer" role="button" hidden="true">Получить решение</a>
 
+{% if isRun == True %}
+    <br/><br/>
+    <div class="alert alert-primary" role="alert">
+        Идёт вычисление оценки критерия смещения. Пожалуйста, подождите!
+    </div>
+    <div id="block-load-animation" class="d-flex justify-content-center">
+        <div class="spinner-border" role="status" aria-hidden="true"></div>
+        <h2 style="text-indent: 20px" id="count">0</h2><h2>%</h2>
+    </div>
+    <br/>
+    <div class="d-flex justify-content-center">
+        <a id="showRes" class="btn btn-success" href="/auto1" hidden="true" role="button">Показать результаты вычислений</a>
+    </div>
+
+    <script type="text/javascript">
+        function updateCount(count)
+        {
+            document.getElementById("count").innerText = count;
+        }
+
+        function showButton(status)
+        {
+            if (status.indexOf('done') !== -1)
+            {
+                document.getElementById("block-load-animation").remove()
+                document.getElementById("showRes").removeAttribute("hidden");
+            }
+        }
+
+        function isDone()
+        {
+            return document.getElementById("showRes").getAttribute("hidden");
+        }
+
+        function check(event) {
+            if (isDone())
+            {
+                var xhr = new XMLHttpRequest();
+
+                xhr.open('POST', '/checkProgress', false);
+
+                xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+
+                xhr.onloadend = function() {
+                    if (xhr.status == 200)
+                    {
+                        var myArr = JSON.parse(xhr.responseText);
+                        updateCount(myArr['count']);
+                        showButton(myArr['status']);
+                    }
+                    else
+                        alert('Что-то пошло не так!');
+                };
+
+                xhr.send();
+            }
+          }
+    </script>
+{% elif isRun == False %}
+    <br/><br/>
+    <div class="alert alert-warning" role="alert">
+        Вычисление оценки критерия смещения временно не возможно, все вычислительные потоки заняты.
+        Пожалуйста, повторите попытку позже!
+    </div>
+{% endif %}
+
 {% if auto %}
-    <br><br>
+    <br/><br/>
 {#    <div class="btn-group" role="group">#}
 {#    <button id="btnGroupDrop1" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">#}
 {#      Сортировка#}

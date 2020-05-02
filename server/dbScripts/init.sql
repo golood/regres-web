@@ -26,10 +26,10 @@ CREATE SEQUENCE worker_id_seq START 1;
 create table worker (
   id                     bigint NOT NULL PRIMARY KEY DEFAULT nextval('worker_id_seq'),
   name                   text,
-  time_start             timestamp NOT NULL,
+  time_start             timestamp,
   time_end               timestamp,
-  count                  bigint NOT NULL,
-  status                 boolean,
+  count                  decimal,
+  status                 text,
   user_id                bigint NOT NULL REFERENCES user_session (id),
   task_id                bigint NOT NULL REFERENCES tasks (id)
 );
@@ -55,3 +55,10 @@ create table tasks_to_resalt (
   id_tasks               bigint NOT NULL REFERENCES tasks (id),
   id_result              bigint NOT NULL REFERENCES result (id)
 );
+
+create table blocker (
+  id                     bigint NOT NULL PRIMARY KEY,
+  limit_worker           bigint NOT NULL DEFAULT 1,
+  run_worker             bigint NOT NULL DEFAULT 0
+);
+INSERT INTO blocker (id) VALUES (0);

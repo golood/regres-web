@@ -5,11 +5,13 @@ from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, escape, session, Response
 from werkzeug.utils import secure_filename
-from server.main import Data, DataEncoder, Test, TestT
+from server.main import Data, DataEncoder, Test, TestT, WorkerTaskPerebor
 import server.utill as utill
 from server.models import MetaData
 from server import config
 import datetime
+import time
+from server.db import ResultRepo, WorkerRepo
 
 app = Flask(__name__)
 app.secret_key = config.secret_key
@@ -21,10 +23,22 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.permanent_session_lifetime = datetime.timedelta(hours=3)
 
 def allowed_file(filename):
+    '''
+    Проверяет соответсвие расширений файлов к разрешённым.
+    :param filename: имя загруженного файла.
+    :return: True, если файл соовтетствует маске,
+             False, если файл не соответствует маске.
+    '''
+
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 def getMetaData():
+    '''
+    Получает мета данные пользователя сессии.
+    :return: мета данные пользователя сессии.
+    '''
+
     if 'meta_data' in session:
         return MetaData(json.loads(session['meta_data']))
     else:
@@ -38,6 +52,11 @@ def getMetaData():
         return meta_data
 
 def redirect_to_main(f):
+    '''
+    Перенаправление на домашнюю страницу, если для пользователя нет открытых
+    сессий.
+    '''
+
     @wraps(f)
     def decorator_function(*args, **kwargs):
         if 'meta_data' not in session:
@@ -46,6 +65,10 @@ def redirect_to_main(f):
     return decorator_function
 
 def update_time_active(f):
+    '''
+    Обновляет время последней активности пользователя.
+    '''
+
     @wraps(f)
     def decorator_function(*args, **kwargs):
         meta_data = getMetaData()
@@ -64,6 +87,11 @@ def internal_server_error(e):
 @app.route('/')
 @update_time_active
 def main():
+    '''
+    Главная страница.
+    :return: шаблон с главной страницей.
+    '''
+
     meta_data = getMetaData()
 
     session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
@@ -75,6 +103,11 @@ def main():
 @redirect_to_main
 @update_time_active
 def upload_file():
+    '''
+    Экран для загрузки и отображения файлов.
+    :return: шаблон с меню загрузки и отображения данных загруженного файла.
+    '''
+
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
@@ -132,6 +165,11 @@ def upload_file():
 @redirect_to_main
 @update_time_active
 def show_matrix():
+    '''
+    Экран для отображения загруженной матрицы.
+    :return: шаблон с загруженной матрицей.
+    '''
+
     meta_data = getMetaData()
     load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
 
@@ -141,17 +179,15 @@ def show_matrix():
                             dataRowLen=range(1, len(load_matrix) + 1),
                             meta_data=meta_data)
 
-@app.route('/uploads/<filename>')
-@redirect_to_main
-@update_time_active
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
-
 @app.route('/key', methods=['POST'])
 @redirect_to_main
 @update_time_active
 def getKey():
+    '''
+    API для установки зависимой переменной.
+    :return: перенаправляет на экран деления матрицы.
+    '''
+
     var_y = request.form['var_y']
     meta_data = MetaData(json.loads(session['meta_data']))
 
@@ -172,6 +208,11 @@ def getKey():
 @redirect_to_main
 @update_time_active
 def div_matrix():
+    '''
+    Экран деления матрицы.
+    :return: шаблон с набором идентификаторов строк используемой матрицы.
+    '''
+
     meta_data = MetaData(json.loads(session['meta_data']))
 
     return render_template('div_matrix.html',
@@ -185,6 +226,10 @@ def div_matrix():
 @redirect_to_main
 @update_time_active
 def answer():
+    '''
+    API для начала вычислений.
+    :return: статус об окончании вычислений.
+    '''
     meta_data = MetaData(json.loads(session['meta_data']))
 
     h1_index = list(map(lambda x: int(x), request.json['h1']))
@@ -212,6 +257,10 @@ def answer():
 @redirect_to_main
 @update_time_active
 def answer1():
+    '''
+    Экран для отображения результатов вычислений.
+    :return: шаблон с результатами вычисленений.
+    '''
     meta_data = MetaData(json.loads(session['meta_data']))
     data = Data(json.loads(session['data']))
 
@@ -229,62 +278,104 @@ def answer1():
 @redirect_to_main
 @update_time_active
 def auto():
+    '''
+    Экран для отображения данных решения задачи поиска критерия смещения.
+    :return: шаблон с результатами поиска критерия смещения на экране
+             раздерения матрицы.
+    '''
+
     meta_data = MetaData(json.loads(session['meta_data']))
 
-    test = TestT(
+
+    task = WorkerTaskPerebor(
+        userId=meta_data.user_session_id,
+        name="biasEstimates",
         x=meta_data.getMetrix(meta_data.matrix_x_index),
         y=meta_data.getRow(meta_data.matrix_y_index))
 
-    res = test.getResaults()
+    task.start()
 
-    result = []
-    for item in res:
-        line = []
-        line.append(utill.format_numbers(item[0][1][0]))
-        line.append(utill.format_numbers(item[0][1][1]))
-        line.append(utill.format_number(item[0][1][2]))
-        line.append(utill.format_number(item[1]))
-        line.append(utill.appendOneForNumber(item[2]))
-        line.append(utill.appendOneForNumber(item[3]))
-        result.append(line)
+    repo = WorkerRepo()
+    time.sleep(1)
+    isRun = repo.isRun(workerId=task.id)
 
     return render_template('div_matrix.html',
+                           isRun=isRun,
                            xLen=range(1, meta_data.len_work_matrix + 1),
-                           h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
-                           h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
-                           auto=True,
-                           res=result,
-                           resLen=range(1, len(res)+1),
-                           meta_data=meta_data)
+                           h1=utill.formatToInt(
+                               meta_data.getRow(meta_data.index_h1)),
+                           h2=utill.formatToInt(
+                               meta_data.getRow(meta_data.index_h2)),
+                           meta_data=meta_data,
+                           verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix)
+
+
+@app.route('/auto1')
+@redirect_to_main
+@update_time_active
+def auto1():
+    '''
+    Экран для отображения данных решения задачи поиска критерия смещения.
+    :return: шаблон с результатами поиска критерия смещения на экране
+             раздерения матрицы.
+    '''
+
+    meta_data = MetaData(json.loads(session['meta_data']))
+
+    repoWorker = WorkerRepo()
+    taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
+
+    repo = ResultRepo()
+    result = repo.getTaskByBestBiasEstimates(taskId)
+
+    return render_template('div_matrix.html',
+                            xLen=range(1, meta_data.len_work_matrix + 1),
+                            h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
+                            h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
+                            auto=True,
+                            res=result,
+                            resLen=range(1, len(result)+1),
+                            meta_data=meta_data)
 
 @app.route('/biasEstimates')
 @redirect_to_main
 @update_time_active
 def bias_astimates():
+    '''
+    Экран для отображения данных решения задачи поиска критерия смещения.
+    :return: шаблон с результатами поиска критерия смещения.
+    '''
+
     meta_data = MetaData(json.loads(session['meta_data']))
 
-    test = TestT(
-        x=meta_data.getMetrix(meta_data.matrix_x_index),
-        y=meta_data.getRow(meta_data.matrix_y_index))
+    repoWorker = WorkerRepo()
+    taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
 
-    res = test.getResaults()
-
-    result = []
-    for item in res:
-        line = []
-        line.append(utill.format_numbers(item[0][1][0]))
-        line.append(utill.format_numbers(item[0][1][1]))
-        line.append(utill.format_number(item[0][1][2]))
-        line.append(utill.format_number(item[1]))
-        line.append(utill.appendOneForNumber(item[2]))
-        line.append(utill.appendOneForNumber(item[3]))
-        result.append(line)
+    repo = ResultRepo()
+    result = repo.getTaskByBestBiasEstimates(taskId)
 
     return render_template('bias_estimates.html',
                             auto=True,
                             res=result,
                             resLen=range(len(result)),
                             meta_data=meta_data)
+
+@app.route('/checkProgress', methods=['POST'])
+@redirect_to_main
+@update_time_active
+def checkProgress():
+    '''
+    Проверяет завершение расчета оценки смещения.
+    :return: возвращает статус и процент прогресса завершения вычислений.
+    '''
+
+    meta_data = MetaData(json.loads(session['meta_data']))
+
+    repoWorker = WorkerRepo()
+    taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
+    status, count = repoWorker.isDone(taskId)
+
+    return {'status': status, 'count': count}
 
 if __name__ == '__main__':
     # Will make the server available externally as well

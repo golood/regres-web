@@ -2,6 +2,7 @@
 import json
 from server import db
 
+
 class MetaData:
     '''
     Класс для хранения мета данных пользователя.
@@ -169,30 +170,105 @@ class MetaData:
         self.matrix_x_index = matrixRepo.addMatrix(x)
 
     def getMetrix(self, matrixId):
+        '''
+        Получает матрицу по идентификатору.
+        :param matrixId: идентификатор матрицы.
+        :return: матрицу вида [[],[],].
+        '''
+
         matrixRepo = db.MatrixRepo()
 
         return matrixRepo.getMatrix(matrixId)
 
     def getRow(self, rowId):
+        '''
+        Получает вектор по идентификатору.
+        :param rowId: идентификатор вектора.
+        :return: массив (вектор) в виде листа значений.
+        '''
+
         matrixRepo = db.MatrixRepo()
 
         return matrixRepo.getRow(rowId)
 
     def setH1H2(self, h1, h2):
+        '''
+        Устанавливает подматрицы Н1, Н2.
+        :param h1: идентификаторы строк целевой матрицы, образующие подматрицу Н1.
+        :param h2: идентификаторы строк целевой матрицы, образующие подматрицу Н2.
+        '''
+
         matrixRepo = db.MatrixRepo()
 
         self.index_h1 = matrixRepo.setRow(h1)
         self.index_h2 = matrixRepo.setRow(h2)
 
     def getCheckTask(self):
+        '''
+        Получает лист с состояниями выбора методов решения задачи.
+        Выбранные методы для решения задачи помечены как True,
+        в противном случае False
+
+        :return: лист с состояниями выбора задач.
+        '''
+
         return [self.mnk, self.mnm, self.mao, self.mco]
 
     def updateTimeActiv(self):
+        '''
+        Обновляет время активности клиента.
+        '''
+
         user_session_db = db.UserSessionRepo()
         user_session_db.updateUserActive(self.user_session_id)
 
     class DataEncoder(json.JSONEncoder):
+        '''
+        Класс кодирует модель Data в JSON формат.
+        '''
         def default(self, obj):
             if isinstance(obj, MetaData):
                 return obj.__dict__
             return json.JSONEncoder.default(self, obj)
+
+
+class Worker:
+    '''
+    Класс описывает сущность, которая выполняет задачи в фоновом режиме.
+    '''
+
+    def __init__(self, userId=None):
+        self.repo = db.WorkerRepo()
+        self.__createWorker(userId)
+
+
+    def __createWorker(self, userId):
+        '''
+        Создаёт в БД нового работника. Получает идентификатор работника.
+        :param userId: идентификатор пользователя.
+        '''
+
+        self.id = self.repo.createNewWorker(userId)
+
+    def buildWorker(self, task, name):
+        '''
+        Собирает работника. Получает задачу для работника. Привязывает её к
+        себе в БД.
+        :param task: выфполняемая задача.
+        :param name: имя задачи.
+        '''
+
+        self.task = task
+        self.name = name
+        self.repo.buildWorker(self.id, self.name, self.task.task_id)
+
+    def run(self):
+        '''
+        Запуск работника.
+        :return: True, в случае успешного запуска.
+                 False, в случае блокировки.
+        '''
+        if not self.repo.runWorker(self.id):
+            return False
+
+        self.task.run()

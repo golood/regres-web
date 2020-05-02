@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 import json
+from threading import Thread
 from regres.regr import Task, TaskPerebor
+from server import db
 
 
 class Data:
@@ -102,6 +104,7 @@ class DataEncoder(json.JSONEncoder):
             return obj.__dict__
         return json.JSONEncoder.default(self, obj)
 
+
 class Result:
 
     def __init__(self, data):
@@ -114,6 +117,7 @@ class Result:
     def _res(self, data):
         for item in data:
             self.results.append(TaskRes(item))
+
 
 class TaskRes:
 
@@ -144,6 +148,55 @@ class Test:
 
     def getResaults(self):
         return self.tasks.getResaults()
+
+
+class WorkerTaskPerebor(Thread):
+    """
+    Поток для решения задачи вычисления критерия смещения.
+    """
+
+    def __init__(self, userId=None, name=None, x=None, y=None):
+        """Инициализация потока"""
+        Thread.__init__(self)
+        self.__createWorker(userId)
+        self.name = name
+        self.x = x
+        self.y = y
+        self.massiv = self._initList(len(x))
+        self.task = TaskPerebor(x=self.x, y=self.y, massiv=self.massiv)
+        self.task_id = self.task.task_id
+        self.__buildWorker()
+
+    def run(self):
+        """Запуск потока"""
+        repo = db.WorkerRepo()
+        if repo.runWorker(self.id):
+            self.task.run()
+
+    def _initList(self, len):
+        m = []
+        for item in range(len):
+            m.append(item)
+
+        return m
+
+    def __createWorker(self, userId):
+        '''
+        Создаёт в БД нового работника. Получает идентификатор работника.
+        :param userId: идентификатор пользователя.
+        '''
+
+        repo = db.WorkerRepo()
+        self.id = repo.createNewWorker(userId)
+
+    def __buildWorker(self):
+        '''
+        Собирает работника. Получает задачу для работника. Привязывает её к
+        себе в БД.
+        '''
+
+        repo = db.WorkerRepo()
+        repo.buildWorker(self.id, self.name, self.task_id)
 
 
 class TestT:
