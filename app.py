@@ -375,7 +375,7 @@ def checkProgress():
     taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
     status, count = repoWorker.isDone(taskId)
 
-    return {'status': status, 'count': count}
+    return {'status': status, 'count': float('{:.2f}'.format(count))}
 
 if __name__ == '__main__':
     # Will make the server available externally as well

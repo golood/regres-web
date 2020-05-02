@@ -9,7 +9,7 @@ import math
 from itertools import combinations
 import threading
 from queue import Queue
-
+import server.config as config
 from server import utill
 from server.db import ResultRepo, WorkerRepo
 
@@ -242,6 +242,7 @@ class TaskPerebor:
         Сохраняет результаты вычислений.
         '''
 
+        startTime = datetime.datetime.now()
         queue = Queue()
 
         # Запускаем поток и очередь
@@ -256,6 +257,11 @@ class TaskPerebor:
 
         # Ждем завершения работы очереди
         queue.join()
+
+        endTime = datetime.datetime.now()
+        s = str((endTime - startTime).total_seconds())
+        with open(config.FILE_LOG, "a") as f:
+            f.write('Время решения задач: ' + s + '\n')
 
         res = self.getResult()
 
@@ -285,10 +291,11 @@ class TaskPerebor:
         len_x = len(self.massiv)
         k = len_x // 2
         size = math.factorial(len_x) / (math.factorial(len_x - k) * math.factorial(k))
-        step = 1000
-        self.percent = step // (size / 100)
+        step = 100
+        self.percent = step / (size / 100)
         counter = 0
         for h1 in combinations(self.massiv, k):
+            startTime = datetime.datetime.now()
             counter += 1
             h2 = tuple(filter(lambda x: (x not in h1), self.massiv))
 
@@ -297,6 +304,10 @@ class TaskPerebor:
             if counter % step == 0:
                 self.runTasks()
                 counter = 0
+                endTime = datetime.datetime.now()
+                s = str((endTime-startTime).total_seconds())
+                with open(config.FILE_LOG, "a") as f:
+                    f.write('Время шага: ' + s + '\n\n')
 
         if counter != 0:
             self.runTasks()
