@@ -1,10 +1,17 @@
+import datetime
+
 import numpy as np
 from functools import reduce
 from pulp import LpVariable, LpMinimize, LpProblem
 import regres.rrrr as rrr
 import sys
-import regres.perebor as comb
 import math
+from itertools import combinations
+import threading
+from queue import Queue
+
+from server import utill
+from server.db import ResultRepo, WorkerRepo
 
 sys.setrecursionlimit(1000000000)
 
@@ -213,35 +220,112 @@ class TaskMCO:
 
 
 class TaskPerebor:
+    '''
+    Класс задачи для решения задачи поиска критерия смещения, перебором
+    комбинаций подматриц Н1, Н2.
+    '''
 
     def __init__(self, x, y, massiv):
         self.x = x
         self.y = y
         self.massiv = massiv
-        self.masPerebor = comb.getAllComb(massiv)
-        self.massivTask = self._initTask()
-
-    def _initTask(self):
-        massiv = []
-        for item in self.masPerebor:
-            task = TaskMCO(self.x, self.y, item[0], item[1])
-            massiv.append(task)
-
-        return massiv
+        self.tasks = []
+        self.repoRes = ResultRepo()
+        self.task_id = self.repoRes.createTask()
 
     def run(self):
-        for task in self.massivTask:
-            task.run()
+        self.getAllComb()
+
+    def runTasks(self):
+        '''
+        Запускает вычисления собранных задач ЛП.
+        Сохраняет результаты вычислений.
+        '''
+
+        queue = Queue()
+
+        # Запускаем поток и очередь
+        for i in range(2):
+            t = self.MyThread(queue)
+            t.setDaemon(True)
+            t.start()
+
+        # Даем очереди нужные нам задачи для решения
+        for task in self.tasks:
+            queue.put(task)
+
+        # Ждем завершения работы очереди
+        queue.join()
+
+        res = self.getResult()
+
+        result = []
+        for item in res:
+            line = []
+            line.append(utill.format_numbers(item[0][1][0]))
+            line.append(utill.format_numbers(item[0][1][1]))
+            line.append(utill.format_number(item[0][1][2]))
+            line.append(utill.format_number(item[1]))
+            line.append(utill.appendOneForNumber(item[2]))
+            line.append(utill.appendOneForNumber(item[3]))
+            result.append(line)
+
+        self.repoRes.addResults(result, self.task_id, self.percent)
+
+        del result
+        self.tasks = []
+
+    def getAllComb(self):
+        '''
+        Перебор всех комбинаций Н1, Н2. Решение задачи методом СМО. Сохранение
+        результатов решений в БД. Запись происходит порционно по n решений
+        задачи.
+        '''
+
+        len_x = len(self.massiv)
+        k = len_x // 2
+        size = math.factorial(len_x) / (math.factorial(len_x - k) * math.factorial(k))
+        step = 1000
+        self.percent = step // (size / 100)
+        counter = 0
+        for h1 in combinations(self.massiv, k):
+            counter += 1
+            h2 = tuple(filter(lambda x: (x not in h1), self.massiv))
+
+            self.tasks.append(TaskMCO(self.x, self.y, h1, h2))
+
+            if counter % step == 0:
+                self.runTasks()
+                counter = 0
+
+        if counter != 0:
+            self.runTasks()
+
+        repoWorker = WorkerRepo()
+        repoWorker.complete(self.task_id)
 
     def getResult(self):
         resaults = []
 
-        for task in self.massivTask:
+        for task in self.tasks:
             resaults.append(task.getResaults())
 
         return resaults
 
+    class MyThread(threading.Thread):
+        def __init__(self, queue):
+            """Инициализация потока"""
+            threading.Thread.__init__(self)
+            self.queue = queue
 
-# test = Task(x, y, h1, h2)
-# test.run()
-# test.getResaults()
+        def run(self):
+            """Запуск потока"""
+            while True:
+                # Получаем задачу ЛП из очереди
+                task = self.queue.get()
+
+                # Решаем задачу
+                task.run()
+
+                # Отправляем сигнал о том, что задача завершена
+                self.queue.task_done()

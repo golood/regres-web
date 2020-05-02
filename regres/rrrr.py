@@ -6,7 +6,7 @@ class LpSolve:
         self.x = x
         self.y = y
         self.var = {}
-        self.problem = pulp.LpProblem('0', pulp.LpMinimize)
+        self.problem = pulp.LpProblem('0', pulp.const.LpMinimize)
         self._createVariable_A()
         self._createVariable_U_V()
         self._createVariable_R()
