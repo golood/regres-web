@@ -261,7 +261,7 @@ class TaskPerebor:
         endTime = datetime.datetime.now()
         s = str((endTime - startTime).total_seconds())
         with open(config.FILE_LOG, "a") as f:
-            f.write('Время решения задач: ' + s + '\n')
+            f.write('Time for 100 tasks: ' + s + '\n')
 
         res = self.getResult()
 
@@ -307,7 +307,7 @@ class TaskPerebor:
                 endTime = datetime.datetime.now()
                 s = str((endTime-startTime).total_seconds())
                 with open(config.FILE_LOG, "a") as f:
-                    f.write('Время шага: ' + s + '\n\n')
+                    f.write('Time step: ' + s + '\n\n')
 
         if counter != 0:
             self.runTasks()
