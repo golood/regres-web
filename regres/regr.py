@@ -243,21 +243,20 @@ class TaskPerebor:
         '''
 
         startTime = datetime.datetime.now()
-#        queue = Queue()
+        queue = Queue()
 
         # Запускаем поток и очередь
-#        for i in range(2):
- #           t = self.MyThread(queue)
-#            t.setDaemon(True)
-#            t.start()
+        for i in range(2):
+            t = self.MyThread(queue)
+            t.setDaemon(True)
+            t.start()
 
         # Даем очереди нужные нам задачи для решения
         for task in self.tasks:
-#            queue.put(task)
-            task.run()
+            queue.put(task)
 
         # Ждем завершения работы очереди
-#        queue.join()
+        queue.join()
 
         endTime = datetime.datetime.now()
         s = str((endTime - startTime).total_seconds())
