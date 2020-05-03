@@ -135,26 +135,31 @@ def upload_file():
 
     meta_data = MetaData(json.loads(session['meta_data']))
 
-    if 'free_chlen' in request.args:
-        meta_data.freeChlen = True
-    else:
-        meta_data.freeChlen = False
-    if 'check_MNK' in request.args:
-        meta_data.mnk = True
-    else:
-        meta_data.mnk = False
-    if 'check_MNM' in request.args:
-        meta_data.mnm = True
-    else:
-        meta_data.mnm = False
-    if 'check_MAO' in request.args:
-        meta_data.mao = True
-    else:
-        meta_data.mao = False
-    if 'check_MCO' in request.args:
-        meta_data.mco = True
-    else:
-        meta_data.mco = False
+    if ('free_chlen' in request.args
+            or 'check_MNK' in request.args
+            or 'check_MNM' in request.args
+            or 'check_MAO' in request.args
+            or 'check_MCO' in request.args):
+        if 'free_chlen' in request.args:
+            meta_data.freeChlen = True
+        else:
+            meta_data.freeChlen = False
+        if 'check_MNK' in request.args:
+            meta_data.mnk = True
+        else:
+            meta_data.mnk = False
+        if 'check_MNM' in request.args:
+            meta_data.mnm = True
+        else:
+            meta_data.mnm = False
+        if 'check_MAO' in request.args:
+            meta_data.mao = True
+        else:
+            meta_data.mao = False
+        if 'check_MCO' in request.args:
+            meta_data.mco = True
+        else:
+            meta_data.mco = False
 
     session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
 
