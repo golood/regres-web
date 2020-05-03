@@ -578,6 +578,25 @@ class WorkerRepo:
         repo.delRunWorker()
         conn.close()
 
+    def isComplete(self, taskId):
+        '''
+        Проверяет, выполнилась ли задача.
+        :return: True -задача выполнена
+                 False - задача в процессе выполнения.
+        '''
+
+        conn = getConnection()
+        with conn.cursor() as cursor:
+            conn.autocommit = True
+
+            select = 'SELECT count FROM worker WHERE task_id = %s'
+
+            cursor.execute(select, (taskId,))
+            count = cursor.fetchone()[0]
+
+        conn.close()
+        return int(count) == 100
+
     def getTaskInLastWorkerByUser(self, userId):
         '''
         Получает идентификатор задачи для последнего работника пользователя.
@@ -686,3 +705,73 @@ class BlockerRepo:
             value = (run_worker - 1,)
             cursor.execute(update, value)
             conn.close()
+
+class ServiceRepo:
+    '''
+    Репозиторий для работы с сервисами решения регерессионных уравнений.
+    '''
+
+    def getNewIndexPage(self):
+        '''
+        Получает новый идентификатор пачки задач.
+        :return: новый идентификатор.
+        '''
+
+        conn = getConnection()
+
+        with conn.cursor() as cursor:
+            conn.autocommit = True
+
+            select = "select nextval('page_id_seq')"
+
+            cursor.execute(select)
+
+            id = cursor.fetchone()[0]
+
+        conn.close()
+        return id
+
+    def getServiceId(self):
+        '''
+        Получает идентификатор запущенного сервиса с самой короткой очередью запланированных задач.
+        :return: идентификатор сервиса.
+        '''
+
+        conn = getConnection()
+        with conn.cursor() as cursor:
+            conn.autocommit = True
+
+            select = '''SELECT s.id
+                        FROM service_list s
+                          LEFT join queue_task q ON s.id = q.service_id AND q.complete IS FALSE
+                        WHERE s.launch IS TRUE
+                        GROUP BY s.id
+                        ORDER BY count(q.id)
+                        LIMIT 1'''
+
+            cursor.execute(select)
+            id = cursor.fetchone()[0]
+        conn.close()
+
+        return id
+
+    def addQueueTask(self, tasks, task_id, parcent):
+        '''
+        Добавляет в очередь массив задачь для одного сервиса.
+        :param tasks: массив задач.
+        '''
+
+        service_id = self.getServiceId()
+
+        conn = getConnection()
+        with conn.cursor() as cursor:
+            conn.autocommit = True
+            page = self.getNewIndexPage()
+            insert = 'INSERT INTO queue_task (service_id, complete, task, task_id, parcent, page) VALUES %s'
+
+            values = []
+            for item in tasks:
+                values.append((service_id, False, item, task_id, parcent, page))
+
+            execute_values(cur=cursor, sql=insert, argslist=values)
+        conn.close()

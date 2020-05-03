@@ -62,3 +62,22 @@ create table blocker (
   run_worker             bigint NOT NULL DEFAULT 0
 );
 INSERT INTO blocker (id) VALUES (0);
+
+
+create table service_list (
+  id                     bigint NOT NULL PRIMARY KEY,
+  launch                 boolean NOT NULL,
+  last_active            timestamp
+);
+
+CREATE SEQUENCE queue_task_id_seq START 1;
+CREATE SEQUENCE page_id_seq START 1;
+create table queue_task (
+  id                     bigint NOT NULL PRIMARY KEY DEFAULT nextval('queue_task_id_seq'),
+  page                   bigint NOT NULL,
+  service_id             bigint NOT NULL REFERENCES service_list (id),
+  complete               boolean NOT NULL,
+  task                   text NOT NULL,
+  task_id                bigint,
+  parcent                decimal
+);

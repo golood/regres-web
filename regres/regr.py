@@ -1,16 +1,14 @@
 import datetime
-
+import json
 import numpy as np
 from functools import reduce
-from pulp import LpVariable, LpMinimize, LpProblem
 import regres.rrrr as rrr
 import sys
 import math
 from itertools import combinations
 import threading
-from queue import Queue
-from server import utill
-from server.db import ResultRepo, WorkerRepo
+from server.db import ResultRepo, WorkerRepo, ServiceRepo
+import time
 
 sys.setrecursionlimit(1000000000)
 
@@ -198,22 +196,18 @@ class Task:
 class TaskMCO:
 
     def __init__(self, x, y, h1=None, h2=None):
-        self.methods = []
-        self.methods.append(MCO(x, y, h1, h2))
+        self.method = MCO(x, y, h1, h2)
 
     def run(self):
-
-        for item in self.methods:
-            item.run()
+        self.method.run()
 
     def getResaults(self):
         resaults = []
 
-        for item in self.methods:
-            resaults.append(item.getResaul())
-            resaults.append(item.getSmeshenir())
-            resaults.append(item.h1)
-            resaults.append(item.h2)
+        resaults.append(self.method.getResaul())
+        resaults.append(self.method.getSmeshenir())
+        resaults.append(self.method.h1)
+        resaults.append(self.method.h2)
 
         return resaults
 
@@ -235,42 +229,19 @@ class TaskPerebor:
     def run(self):
         self.getAllComb()
 
-    def runTasks(self):
+    def addTasksInService(self):
         '''
-        Запускает вычисления собранных задач ЛП.
-        Сохраняет результаты вычислений.
+        Добавляет собранные задач ЛП в очередь сервисов.
         '''
 
-        queue = Queue()
+        tasksDTO = []
+        for item in self.tasks:
+            tasksDTO.append(json.dumps(item, cls=self.TaskDTO.DataEncoder))
 
-        # Запускаем поток и очередь
-        for i in range(2):
-            t = self.MyThread(queue)
-            t.start()
+        serviceRepo = ServiceRepo()
+        serviceRepo.addQueueTask(tasksDTO, self.task_id, self.percent)
 
-        # Даем очереди нужные нам задачи для решения
-        for task in self.tasks:
-            queue.put(task)
-
-        # Ждем завершения работы очереди
-        queue.join()
-
-        res = self.getResult()
-
-        result = []
-        for item in res:
-            line = []
-            line.append(utill.format_numbers(item[0][1][0]))
-            line.append(utill.format_numbers(item[0][1][1]))
-            line.append(utill.format_number(item[0][1][2]))
-            line.append(utill.format_number(item[1]))
-            line.append(utill.appendOneForNumber(item[2]))
-            line.append(utill.appendOneForNumber(item[3]))
-            result.append(line)
-
-        self.repoRes.addResults(result, self.task_id, self.percent)
-
-        del result
+        del tasksDTO
         self.tasks = []
 
     def getAllComb(self):
@@ -283,24 +254,32 @@ class TaskPerebor:
         len_x = len(self.massiv)
         k = len_x // 2
         size = math.factorial(len_x) / (math.factorial(len_x - k) * math.factorial(k))
-        step = 100
+        step = 1000
+
         self.percent = step / (size / 100)
+        if self.percent > 100:
+            self.percent = 100
+
         counter = 0
         for h1 in combinations(self.massiv, k):
             counter += 1
             h2 = tuple(filter(lambda x: (x not in h1), self.massiv))
 
-            self.tasks.append(TaskMCO(self.x, self.y, h1, h2))
+            self.tasks.append(self.TaskDTO(self.x, self.y, h1, h2))
 
             if counter % step == 0:
-                self.runTasks()
+                self.addTasksInService()
                 counter = 0
 
         if counter != 0:
-            self.runTasks()
+            self.addTasksInService()
 
-        repoWorker = WorkerRepo()
-        repoWorker.complete(self.task_id)
+        while True:
+            repoWorker = WorkerRepo()
+            if repoWorker.isComplete(self.task_id):
+                repoWorker.complete(self.task_id)
+                break
+            time.sleep(5)
 
     def getResult(self):
         resaults = []
@@ -309,6 +288,23 @@ class TaskPerebor:
             resaults.append(task.getResaults())
 
         return resaults
+
+    class TaskDTO:
+        def __init__(self, x, y, h1, h2):
+            self.x = x
+            self.y = y
+            self.h1 = h1
+            self.h2 = h2
+
+        class DataEncoder(json.JSONEncoder):
+            '''
+            Класс кодирует модель Data в JSON формат.
+            '''
+
+            def default(self, obj):
+                if isinstance(obj, TaskPerebor.TaskDTO):
+                    return obj.__dict__
+                return json.JSONEncoder.default(self, obj)
 
     class MyThread(threading.Thread):
         def __init__(self, queue):
