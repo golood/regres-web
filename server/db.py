@@ -595,7 +595,7 @@ class WorkerRepo:
             count = cursor.fetchone()[0]
 
         conn.close()
-        return int(count) == 100
+        return int(count) >= 100
 
     def getTaskInLastWorkerByUser(self, userId):
         '''
@@ -755,7 +755,30 @@ class ServiceRepo:
 
         return id
 
-    def addQueueTask(self, tasks, task_id, parcent):
+    def getRuningServiceIds(self):
+        '''
+        Получает идентификаторы всех запущенных сервисов.
+        :return: лист с идентификаторами сервисов.
+        '''
+
+        conn = getConnection()
+        with conn.cursor() as cursor:
+            conn.autocommit = True
+
+            select = 'SELECT id FROM service_list WHERE launch IS TRUE'
+
+            cursor.execute(select)
+            rows = cursor.fetchall()
+
+            line = []
+            for row in rows:
+                line.append(row)
+
+        conn.close()
+        return line
+
+
+    def addQueueTaskByBestService(self, tasks, task_id, parcent):
         '''
         Добавляет в очередь массив задачь для одного сервиса.
         :param tasks: массив задач.
@@ -772,6 +795,25 @@ class ServiceRepo:
             values = []
             for item in tasks:
                 values.append((service_id, False, item, task_id, parcent, page))
+
+            execute_values(cur=cursor, sql=insert, argslist=values)
+        conn.close()
+
+    def addQueueTask(self, tasks, task_id, parcent, serviceId):
+        '''
+        Добавляет в очередь массив задачь для одного сервиса.
+        :param tasks: массив задач.
+        '''
+
+        conn = getConnection()
+        with conn.cursor() as cursor:
+            conn.autocommit = True
+            page = self.getNewIndexPage()
+            insert = 'INSERT INTO queue_task (service_id, complete, task, task_id, parcent, page) VALUES %s'
+
+            values = []
+            for item in tasks:
+                values.append((serviceId, False, item, task_id, parcent, page))
 
             execute_values(cur=cursor, sql=insert, argslist=values)
         conn.close()

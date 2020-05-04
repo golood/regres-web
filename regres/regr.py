@@ -226,10 +226,13 @@ class TaskPerebor:
         self.repoRes = ResultRepo()
         self.task_id = self.repoRes.createTask()
 
+        repo = ServiceRepo()
+        self.serviceIds = repo.getRuningServiceIds()
+
     def run(self):
         self.getAllComb()
 
-    def addTasksInService(self):
+    def addTasksInService(self, serviceId):
         '''
         Добавляет собранные задач ЛП в очередь сервисов.
         '''
@@ -239,7 +242,7 @@ class TaskPerebor:
             tasksDTO.append(json.dumps(item, cls=self.TaskDTO.DataEncoder))
 
         serviceRepo = ServiceRepo()
-        serviceRepo.addQueueTask(tasksDTO, self.task_id, self.percent)
+        serviceRepo.addQueueTask(tasksDTO, self.task_id, self.percent, serviceId)
 
         del tasksDTO
         self.tasks = []
@@ -260,6 +263,8 @@ class TaskPerebor:
         if self.percent > 100:
             self.percent = 100
 
+        indexService = 0
+        maxIndex = len(self.serviceIds) - 1
         counter = 0
         for h1 in combinations(self.massiv, k):
             counter += 1
@@ -268,11 +273,15 @@ class TaskPerebor:
             self.tasks.append(self.TaskDTO(self.x, self.y, h1, h2))
 
             if counter % step == 0:
-                self.addTasksInService()
+                self.addTasksInService(self.serviceIds[indexService])
                 counter = 0
+                if indexService == maxIndex:
+                    indexService = 0
+                else:
+                    indexService += 1
 
         if counter != 0:
-            self.addTasksInService()
+            self.addTasksInService(self.serviceIds[indexService])
 
         while True:
             repoWorker = WorkerRepo()
