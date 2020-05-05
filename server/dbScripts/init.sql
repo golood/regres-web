@@ -31,7 +31,7 @@ create table worker (
   count                  decimal,
   status                 text,
   user_id                bigint NOT NULL REFERENCES user_session (id),
-  task_id                bigint NOT NULL REFERENCES tasks (id)
+  task_id                bigint REFERENCES tasks (id)
 );
 
 CREATE SEQUENCE result_id_seq START 1;

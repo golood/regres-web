@@ -38,6 +38,9 @@ class Method:
         self.a = []
         self.eps = []
         self.e = 0
+        self.M = 0  # сумма модулей ошибок
+        self.K = 0  # сумма квадратов ошибок
+        self.O = 0  # максимальная по модулю ошибка
         self.nz = None
 
     def _y(self, alfa):
@@ -64,8 +67,31 @@ class Method:
 
         return E
 
+    def calculation_m(self):
+        '''
+        Расчет суммы модулей ошибок.
+        '''
+
+        for item in self.eps:
+            self.M += abs(item)
+
+    def calculation_k(self):
+        '''
+        Расчет суммы квадратов ошибок.
+        '''
+
+        for item in self.eps:
+            self.K += item**2
+
+    def calculation_o(self):
+        '''
+        Поиск максимольной по модулю ошибки.
+        '''
+
+        self.O = max(list(map(lambda x: abs(x), self.eps)))
+
     def getResaul(self):
-        return self.a, self.eps, self.e
+        return self.a, self.eps, [self.e, self.M, self.K, self.O]
 
     def getSmeshenir(self):
         sum = 0
@@ -105,6 +131,9 @@ class MNK(Method):
         for item in eps:
             self.eps.append(item)
         self.e = self.Epselon(self.a)
+        self.calculation_m()
+        self.calculation_k()
+        self.calculation_o()
 
     def getResaul(self):
         return 'МНК', super().getResaul()
@@ -123,6 +152,9 @@ class MNM(Method):
         task.run()
         self.a, self.eps = task.getResault()
         self.e = self.Epselon(self.a)
+        self.calculation_m()
+        self.calculation_k()
+        self.calculation_o()
 
     def getResaul(self):
         return 'МНМ', super().getResaul()
@@ -141,6 +173,9 @@ class MAO(Method):
         task.run()
         self.a, self.eps = task.getResault()
         self.e = self.Epselon(self.a)
+        self.calculation_m()
+        self.calculation_k()
+        self.calculation_o()
 
     def getResaul(self):
         return 'МАО', super().getResaul()
@@ -161,6 +196,9 @@ class MCO(Method):
         task.run()
         self.a, self.eps = task.getResault()
         self.e = self.Epselon(self.a)
+        self.calculation_m()
+        self.calculation_k()
+        self.calculation_o()
 
     def getResaul(self):
         return 'МСО', super().getResaul()
