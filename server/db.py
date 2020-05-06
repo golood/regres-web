@@ -401,12 +401,35 @@ class ResultRepo:
         conn.close()
         return line
 
-    def getTaskByBestBiasEstimates(self, id):
+    def getTaskByBestBiasEstimates(self, id, filterId, sotringId):
         '''
         Получает результаты вычислений в задаче.
         :param id: идентификатор задачи.
+        :param filterId: идентификатор фильтра.
+        :param sotringId: идентификатор сортировки.
         :return: массив с результатами вычислений.
         '''
+
+        filter_p = ' LIMIT 20'
+        sorting_p = ' ORDER BY r.bias_estimates::numeric '
+
+        if filterId == 0:
+            filter_p = ' LIMIT 20'
+        elif filterId == 1:
+            filter_p = ' LIMIT 40'
+        elif filterId == 2:
+            filter_p = ' LIMIT 100'
+        elif filterId == 3:
+            filter_p = ' LIMIT 1000'
+
+        if sotringId == 0:
+            sorting_p = ' ORDER BY r.bias_estimates::numeric DESC '
+        elif sotringId == 1:
+            sorting_p = ' ORDER BY r.bias_estimates::numeric '
+        elif sotringId == 2:
+            sorting_p = ' ORDER BY r.e::numeric DESC '
+        elif sotringId == 3:
+            sorting_p = ' ORDER BY r.e::numeric '
 
         conn = getConnection()
 
@@ -418,8 +441,7 @@ class ResultRepo:
                           JOIN tasks_to_resalt ttr on t.id = ttr.id_tasks
                           JOIN result r on ttr.id_result = r.id
                         WHERE t.id = %s
-                        ORDER BY r.bias_estimates
-                        LIMIT 50'''
+                        ''' + sorting_p + filter_p
             cursor.execute(select, (id,))
 
             rows = cursor.fetchall()

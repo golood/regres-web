@@ -33,6 +33,34 @@
 
 {% if auto %}
     <br><br>
+    <form action="/biasEstimates" method="post">
+  <div class="form-row align-items-center">
+    <div class="col-auto my-1">
+      <label class="mr-sm-2" for="filter">Фильтр</label>
+      <select class="custom-select mr-sm-2" id="filter" name="filter">
+        <option {% if params.filterId == 0 %}selected {% endif %} value="0">20 результатов</option>
+        <option {% if params.filterId == 1 %}selected {% endif %} value="1">40 результатов</option>
+        <option {% if params.filterId == 2 %}selected {% endif %} value="2">100 результатов</option>
+        <option {% if params.filterId == 3 %}selected {% endif %} value="3">1000 результатов</option>
+      </select>
+    </div>
+
+    <div class="col-auto my-1">
+      <label class="mr-sm-2" for="sorting">Сортировать по</label>
+      <select class="custom-select mr-sm-2" id="sorting" name="sorting">
+        <option {% if params.sortingId == 0 %}selected {% endif %} value="0">оценке критерию смещения (по убыванию)</option>
+        <option {% if params.sortingId == 1 %}selected {% endif %} value="1">оценке критерию смещения (по возрастанию)</option>
+        <option {% if params.sortingId == 2 %}selected {% endif %} value="2">E (по убыванию)</option>
+        <option {% if params.sortingId == 3 %}selected {% endif %} value="3">E (по возрастанию)</option>
+      </select>
+    </div>
+
+    <div class="col-auto my-1">
+      <button type="submit" class="btn btn-primary">Применить</button>
+    </div>
+  </div>
+</form>
+    <br/>
     <table class="table table-sm table-striped table-bordered">
     <thead> <!-- Column names -->
       <tr>

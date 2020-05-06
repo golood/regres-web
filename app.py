@@ -2,10 +2,9 @@
 import json
 import os
 from functools import wraps
-
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, escape, session, Response
+from flask import Flask, render_template, request, redirect, url_for, session, Response
 from werkzeug.utils import secure_filename
-from server.main import Data, DataEncoder, Test, TestT, WorkerTaskPerebor
+from server.main import Data, DataEncoder, Test, WorkerTaskPerebor
 import server.utill as utill
 from server.models import MetaData
 from server import config
@@ -22,6 +21,7 @@ ALLOWED_EXTENSIONS = set(['txt'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.permanent_session_lifetime = datetime.timedelta(hours=3)
 
+
 def allowed_file(filename):
     '''
     Проверяет соответсвие расширений файлов к разрешённым.
@@ -32,6 +32,7 @@ def allowed_file(filename):
 
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
 
 def getMetaData():
     '''
@@ -51,6 +52,7 @@ def getMetaData():
 
         return meta_data
 
+
 def redirect_to_main(f):
     '''
     Перенаправление на домашнюю страницу, если для пользователя нет открытых
@@ -62,7 +64,9 @@ def redirect_to_main(f):
         if 'meta_data' not in session:
             return redirect(url_for('main'))
         return f(*args, **kwargs)
+
     return decorator_function
+
 
 def update_time_active(f):
     '''
@@ -74,15 +78,19 @@ def update_time_active(f):
         meta_data = getMetaData()
         meta_data.updateTimeActiv()
         return f(*args, **kwargs)
+
     return decorator_function
+
 
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('errors/500.html'), 500
 
+
 @app.errorhandler(404)
 def internal_server_error(e):
     return render_template('errors/404.html'), 404
+
 
 @app.route('/')
 @update_time_active
@@ -98,6 +106,7 @@ def main():
 
     return render_template('main.html',
                            data=meta_data)
+
 
 @app.route('/load', methods=['GET', 'POST'])
 @redirect_to_main
@@ -119,7 +128,6 @@ def upload_file():
                 for line in f:
                     load_matrix.append(list(map(float, line.split())))
 
-
             meta_data.addLoadMatrix(load_matrix)
             meta_data.index_h1 = None
             meta_data.index_h2 = None
@@ -128,8 +136,8 @@ def upload_file():
 
             return render_template('load_file.html',
                                    data=load_matrix,
-                                   dataLen=range(1, len(load_matrix[0])+1),
-                                   dataRowLen=range(1, len(load_matrix)+1),
+                                   dataLen=range(1, len(load_matrix[0]) + 1),
+                                   dataRowLen=range(1, len(load_matrix) + 1),
                                    meta_data=meta_data,
                                    verification=len(load_matrix) > len(load_matrix[0]))
 
@@ -164,7 +172,8 @@ def upload_file():
     session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
 
     return render_template('load_file.html',
-                            meta_data=meta_data)
+                           meta_data=meta_data)
+
 
 @app.route('/matrix')
 @redirect_to_main
@@ -179,10 +188,11 @@ def show_matrix():
     load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
 
     return render_template('matrix.html',
-                            data=load_matrix,
-                            dataLen=range(1, len(load_matrix[0]) + 1),
-                            dataRowLen=range(1, len(load_matrix) + 1),
-                            meta_data=meta_data)
+                           data=load_matrix,
+                           dataLen=range(1, len(load_matrix[0]) + 1),
+                           dataRowLen=range(1, len(load_matrix) + 1),
+                           meta_data=meta_data)
+
 
 @app.route('/key', methods=['POST'])
 @redirect_to_main
@@ -203,11 +213,12 @@ def getKey():
     elif int(var_y) < 0:
         return render_template('error.html', e='Значение индекса не может быть отрицательным!')
 
-    meta_data.set_y(int(var_y)-1)
+    meta_data.set_y(int(var_y) - 1)
 
     session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
 
     return redirect(url_for('div_matrix'))
+
 
 @app.route('/div')
 @redirect_to_main
@@ -221,11 +232,12 @@ def div_matrix():
     meta_data = MetaData(json.loads(session['meta_data']))
 
     return render_template('div_matrix.html',
-                            xLen=range(1, meta_data.len_work_matrix + 1),
-                            h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
-                            h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
-                            meta_data=meta_data,
-                            verification=meta_data.len_work_matrix/2 > meta_data.len_x_work_matrix)
+                           xLen=range(1, meta_data.len_work_matrix + 1),
+                           h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
+                           h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
+                           meta_data=meta_data,
+                           verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix)
+
 
 @app.route('/answer', methods=['POST'])
 @redirect_to_main
@@ -258,6 +270,7 @@ def answer():
 
     return Response(status=200)
 
+
 @app.route('/answer', methods=['GET'])
 @redirect_to_main
 @update_time_active
@@ -272,12 +285,13 @@ def answer1():
     if meta_data.freeChlen:
         aLen = range(len(data.results[0][1][0]))
     else:
-        aLen = range(1, len(data.results[0][1][0])+1)
+        aLen = range(1, len(data.results[0][1][0]) + 1)
     return render_template('answer.html',
-                            data=data,
-                            aLen=aLen,
-                            epsLen=range(1, len(data.results[0][1][1])+1),
-                            meta_data=meta_data)
+                           data=data,
+                           aLen=aLen,
+                           epsLen=range(1, len(data.results[0][1][1]) + 1),
+                           meta_data=meta_data)
+
 
 @app.route('/auto')
 @redirect_to_main
@@ -290,7 +304,6 @@ def auto():
     '''
 
     meta_data = MetaData(json.loads(session['meta_data']))
-
 
     task = WorkerTaskPerebor(
         userId=meta_data.user_session_id,
@@ -315,7 +328,7 @@ def auto():
                            verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix)
 
 
-@app.route('/auto1')
+@app.route('/auto1', methods=['GET', 'POST'])
 @redirect_to_main
 @update_time_active
 def auto1():
@@ -327,22 +340,27 @@ def auto1():
 
     meta_data = MetaData(json.loads(session['meta_data']))
 
+    filterId = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
+    sortingId = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
+
     repoWorker = WorkerRepo()
     taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
 
     repo = ResultRepo()
-    result = repo.getTaskByBestBiasEstimates(taskId)
+    result = repo.getTaskByBestBiasEstimates(taskId, filterId, sortingId)
 
     return render_template('div_matrix.html',
-                            xLen=range(1, meta_data.len_work_matrix + 1),
-                            h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
-                            h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
-                            auto=True,
-                            res=result,
-                            resLen=range(1, len(result)+1),
-                            meta_data=meta_data)
+                           xLen=range(1, meta_data.len_work_matrix + 1),
+                           h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
+                           h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
+                           auto=True,
+                           res=result,
+                           resLen=range(1, len(result) + 1),
+                           meta_data=meta_data,
+                           params={'filterId': filterId, 'sortingId': sortingId})
 
-@app.route('/biasEstimates')
+
+@app.route('/biasEstimates', methods=['GET', 'POST'])
 @redirect_to_main
 @update_time_active
 def bias_astimates():
@@ -353,17 +371,22 @@ def bias_astimates():
 
     meta_data = MetaData(json.loads(session['meta_data']))
 
+    filterId = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
+    sortingId = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
+
     repoWorker = WorkerRepo()
     taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
 
     repo = ResultRepo()
-    result = repo.getTaskByBestBiasEstimates(taskId)
+    result = repo.getTaskByBestBiasEstimates(taskId, filterId, sortingId)
 
     return render_template('bias_estimates.html',
-                            auto=True,
-                            res=result,
-                            resLen=range(len(result)),
-                            meta_data=meta_data)
+                           auto=True,
+                           res=result,
+                           resLen=range(len(result)),
+                           meta_data=meta_data,
+                           params={'filterId': filterId, 'sortingId': sortingId})
+
 
 @app.route('/checkProgress', methods=['POST'])
 @redirect_to_main
@@ -381,6 +404,7 @@ def checkProgress():
     status, count = repoWorker.isDone(taskId)
 
     return {'status': status, 'count': float('{:.2f}'.format(count))}
+
 
 if __name__ == '__main__':
     # Will make the server available externally as well
