@@ -236,7 +236,8 @@ def div_matrix():
                            h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
                            h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
                            meta_data=meta_data,
-                           verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix)
+                           verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix,
+                           params={'filterId': 0, 'sortingId': 0})
 
 
 @app.route('/answer', methods=['POST'])
@@ -325,7 +326,8 @@ def auto():
                            h2=utill.formatToInt(
                                meta_data.getRow(meta_data.index_h2)),
                            meta_data=meta_data,
-                           verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix)
+                           verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix,
+                           params={'filterId': 0, 'sortingId': 0})
 
 
 @app.route('/auto1', methods=['GET', 'POST'])
@@ -376,6 +378,9 @@ def bias_astimates():
 
     repoWorker = WorkerRepo()
     taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
+
+    if taskId is None:
+        return redirect(url_for('div_matrix'))
 
     repo = ResultRepo()
     result = repo.getTaskByBestBiasEstimates(taskId, filterId, sortingId)
