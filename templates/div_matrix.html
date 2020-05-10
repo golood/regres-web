@@ -294,7 +294,6 @@ window.onload = funonload;
   }
 
   function lbtn(event){
-      alert('l_'.concat(event.value));
       document.getElementById('l_'.concat(event.value)).remove();
       var elem = document.createElement('button');
       elem.setAttribute('id', 'r_'.concat(event.value));

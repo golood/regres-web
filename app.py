@@ -191,7 +191,74 @@ def show_matrix():
                            data=load_matrix,
                            dataLen=range(1, len(load_matrix[0]) + 1),
                            dataRowLen=range(1, len(load_matrix) + 1),
-                           meta_data=meta_data)
+                           meta_data=meta_data,
+                           load=True)
+
+
+@app.route('/workMatrix')
+@redirect_to_main
+@update_time_active
+def work_matrix():
+    '''
+    Экран для отображения рабочей матрицы.
+    :return: шаблон с рабочей матрицей.
+    '''
+
+    meta_data = getMetaData()
+    work_matrix = meta_data.getMetrix(meta_data.work_matrix_id)
+
+    return render_template('matrix.html',
+                           data=work_matrix,
+                           dataLen=range(1, len(work_matrix[0]) + 1),
+                           dataRowLen=range(1, len(work_matrix) + 1),
+                           meta_data=meta_data,
+                           load=False)
+
+
+@app.route('/editWorkMatrix', methods=['GET', 'POST'])
+@redirect_to_main
+@update_time_active
+def edit_work_matrix():
+    '''
+    Экран для редактирования загруженной матрицы.
+    :return: шаблон с рабочей матрицей.
+    '''
+
+    if request.method == 'GET':
+        meta_data = getMetaData()
+        load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
+
+        return render_template('matrix.html',
+                               data=load_matrix,
+                               dataLen=range(1, len(load_matrix[0]) + 1),
+                               dataRowLen=range(1, len(load_matrix) + 1),
+                               meta_data=meta_data,
+                               load=True,
+                               edit=True)
+    else:
+        meta_data = getMetaData()
+        load_matrix = meta_data.getMetrix(meta_data.load_matrix_id)
+
+        indexes_work_matrix = []
+        for item in range(len(load_matrix[0])):
+            if 'check_{}'.format(item) in request.form:
+                indexes_work_matrix.append(item)
+
+        work_matrix = []
+        for items in load_matrix:
+            index = 0
+            row = []
+            for item in items:
+                if index in indexes_work_matrix:
+                    row.append(item)
+                index += 1
+            work_matrix.append(row)
+
+        meta_data.addWorkMatrix(work_matrix)
+
+        session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+
+        return redirect(url_for('work_matrix'))
 
 
 @app.route('/key', methods=['POST'])

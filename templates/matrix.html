@@ -29,7 +29,16 @@
   </li>
 </ul>
 <div class="py-3 px-lg-5">
+
+<a class="btn btn-primary" href="/matrix" role="button">Загруженная матрица</a>
+<a class="btn btn-primary" href="/workMatrix" role="button">Рабочая матрица</a>
+<a class="btn btn-primary" href="/editWorkMatrix" role="button">Редактировать рабочую матрицу</a>
 {% if data %}
+  {% if load %}
+    <div>Загруженная матрица</div>
+  {% else %}
+    <div>Рабочая матрица</div>
+  {% endif %}
   <div style="height: 500px" class="table-responsive">
   <table class="table table-sm table-striped table-bordered">
     <thead> <!-- Column names -->
@@ -54,14 +63,30 @@
   </div>
 {% endif %}
 
+{% if edit %}
+    <br/>
+    <form action="/editWorkMatrix" method="post">
+    <div>Выберите индексы столбцов для рабочей матрицы.</div>
+    <div class="btn-group mr-2" role="group" aria-label="First group">
+    {% for item in dataLen %}
+      <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" name="check_{{ item-1 }}" checked>
+        <label class="form-check-label" for="exampleCheck1">{{item}}&#8195;</label>
+      </div>
+    {% endfor %}
+    </div>
+    <br>
+    <button type="submit" class="btn btn-primary">Применить</button>
+  </form>
+{% else %}
   <br/>
-
   <div>Введите индекс столбца для выбора зависимой переменной.</div>
   <form action="/key" method="post">
     <input class="form-control" name="var_y" type="number" placeholder="Default input">
     <br>
     <button type="submit" class="btn btn-primary">Подготовить матрицы N1 и N2</button>
   </form>
+{% endif %}
 </div>
 
 
