@@ -64,7 +64,7 @@ window.onload = funonload;
               <h3>N2</h3>
               <div id="r_group" class="list-group">
                   {% for item in h2 %}
-                    <button id="l_{{item}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item}}">{{item + 1}}</button>
+                    <button id="r_{{item}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item}}">{{item + 1}}</button>
                   {% endfor %}
               </div>
               </div>
@@ -113,7 +113,7 @@ window.onload = funonload;
     </div>
     <br/>
     <div class="d-flex justify-content-center">
-        <a id="showRes" class="btn btn-success" href="/auto1" hidden="true" role="button">Показать результаты вычислений</a>
+        <a id="showRes" class="btn btn-success" href="/div" hidden="true" role="button">Показать результаты вычислений</a>
     </div>
 
     <script type="text/javascript">
@@ -182,7 +182,7 @@ window.onload = funonload;
 {#    </div>#}
 {#  </div>#}
 
-<form action="/auto1" method="post">
+<form action="/div" method="post">
   <div class="form-row align-items-center">
     <div class="col-auto my-1">
       <label class="mr-sm-2" for="filter">Фильтр</label>
@@ -210,7 +210,7 @@ window.onload = funonload;
   </div>
 </form>
     <br/>
-    <table class="table table-sm table-striped table-bordered">
+    <table id="biasEstimatesTable" class="table table-sm table-striped table-bordered">
     <thead> <!-- Column names -->
       <tr>
           <th scope="col">#</th>
@@ -224,11 +224,14 @@ window.onload = funonload;
     </thead>
     <tbody> <!-- Data -->
       {% for index in resLen %}
-        <tr>
+        <tr id="biasEstimatesRow_{{ index }}">
           <th scope="row">{{ index }}</th>
           {% for item in res[index-1] %}
             <td>{{item}}</td>
           {% endfor %}
+          <th>
+            <button value="{{ index}}" type="button" class="btn btn-primary" onclick="getValuesForH1H2(this)">Применить</button>
+          </th>
         </tr>
       {% endfor %}
     </tbody>
@@ -237,7 +240,61 @@ window.onload = funonload;
 
 
 <script type="text/javascript">
+
+  function getValuesForH1H2(event) {
+    var row = document.getElementById('biasEstimatesRow_' + event.value);
+    var h1 = createMassiv(row.getElementsByTagName('td')[4].innerText);
+    var h2 = createMassiv(row.getElementsByTagName('td')[5].innerText);
+
+    var r = document.getElementById('r_group');
+    var l = document.getElementById('l_group');
+
+    while (r.firstChild) {
+        r.removeChild(r.lastChild);
+    }
+    while (l.firstChild) {
+        l.removeChild(l.lastChild);
+    }
+
+    h1.forEach(item => createLElement(item));
+    h2.forEach(item => createRElement(item));
+  }
+
+  function createMassiv(str) {
+    var str = str.substring(1, str.length-1);
+    let arrayOfString = str.split(',');
+    let arrayOfInt = [];
+    arrayOfString.forEach(e => arrayOfInt.push(parseInt(e) - 1));
+
+    return arrayOfInt;
+  }
+
+  function createLElement(index) {
+      var elem = document.createElement('button');
+      elem.setAttribute('id', 'l_'.concat(index));
+      elem.setAttribute('onclick', 'lbtn(this)');
+      elem.setAttribute('type', "button");
+      elem.setAttribute('class', "list-group-item list-group-item-action");
+      elem.setAttribute('value', index);
+      elem.innerHTML = index+1;
+
+      document.getElementById('l_group').append(elem);
+  }
+
+  function createRElement(index) {
+      var elem = document.createElement('button');
+      elem.setAttribute('id', 'r_'.concat(index));
+      elem.setAttribute('onclick', 'rbtn(this)');
+      elem.setAttribute('type', "button");
+      elem.setAttribute('class', "list-group-item list-group-item-action");
+      elem.setAttribute('value', index);
+      elem.innerHTML = index+1;
+
+      document.getElementById('r_group').append(elem);
+  }
+
   function lbtn(event){
+      alert('l_'.concat(event.value));
       document.getElementById('l_'.concat(event.value)).remove();
       var elem = document.createElement('button');
       elem.setAttribute('id', 'r_'.concat(event.value));

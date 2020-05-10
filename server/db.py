@@ -633,8 +633,8 @@ class WorkerRepo:
 
             select = "SELECT task_id FROM worker WHERE user_id = %s ORDER BY id DESC LIMIT 1"
             cursor.execute(select, (userId,))
-
-            id = None if cursor.fetchone() is None else cursor.fetchone()[0]
+            answer = cursor.fetchone()
+            id = None if answer is None else answer[0]
 
         conn.close()
         return id

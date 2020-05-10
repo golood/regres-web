@@ -220,7 +220,7 @@ def getKey():
     return redirect(url_for('div_matrix'))
 
 
-@app.route('/div')
+@app.route('/div', methods=['GET', 'POST'])
 @redirect_to_main
 @update_time_active
 def div_matrix():
@@ -231,12 +231,29 @@ def div_matrix():
 
     meta_data = MetaData(json.loads(session['meta_data']))
 
+    filterId = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
+    sortingId = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
+
+    repoWorker = WorkerRepo()
+    taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
+
+    repo = ResultRepo()
+    result = repo.getTaskByBestBiasEstimates(taskId, filterId, sortingId)
+
+    if len(result) != 0:
+        auto = True
+    else:
+        auto = False
+
     return render_template('div_matrix.html',
                            xLen=range(1, meta_data.len_work_matrix + 1),
                            h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
                            h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
                            meta_data=meta_data,
                            verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix,
+                           auto=auto,
+                           res=result,
+                           resLen=range(1, len(result) + 1),
                            params={'filterId': 0, 'sortingId': 0})
 
 
@@ -328,38 +345,6 @@ def auto():
                            meta_data=meta_data,
                            verification=meta_data.len_work_matrix / 2 > meta_data.len_x_work_matrix,
                            params={'filterId': 0, 'sortingId': 0})
-
-
-@app.route('/auto1', methods=['GET', 'POST'])
-@redirect_to_main
-@update_time_active
-def auto1():
-    '''
-    Экран для отображения данных решения задачи поиска критерия смещения.
-    :return: шаблон с результатами поиска критерия смещения на экране
-             раздерения матрицы.
-    '''
-
-    meta_data = MetaData(json.loads(session['meta_data']))
-
-    filterId = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
-    sortingId = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
-
-    repoWorker = WorkerRepo()
-    taskId = repoWorker.getTaskInLastWorkerByUser(meta_data.user_session_id)
-
-    repo = ResultRepo()
-    result = repo.getTaskByBestBiasEstimates(taskId, filterId, sortingId)
-
-    return render_template('div_matrix.html',
-                           xLen=range(1, meta_data.len_work_matrix + 1),
-                           h1=utill.formatToInt(meta_data.getRow(meta_data.index_h1)),
-                           h2=utill.formatToInt(meta_data.getRow(meta_data.index_h2)),
-                           auto=True,
-                           res=result,
-                           resLen=range(1, len(result) + 1),
-                           meta_data=meta_data,
-                           params={'filterId': filterId, 'sortingId': sortingId})
 
 
 @app.route('/biasEstimates', methods=['GET', 'POST'])
