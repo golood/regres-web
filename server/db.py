@@ -306,7 +306,7 @@ class ResultRepo:
                                str(item[4]),
                                str(item[5]),))
 
-            id_res = execute_values(cur=cursor, sql=insert, argslist=values, fetch=True, page_size=500)
+            id_res = execute_values(cur=cursor, sql=insert, argslist=values, fetch=True, page_size=200)
 
         conn.close()
         return id_res
@@ -351,7 +351,7 @@ class ResultRepo:
             for item in id_res:
                 values.append((id_task, item,))
 
-            execute_values(cur=cursor, sql=insert, argslist=values, page_size=500)
+            execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
         conn.close()
 
     def addResults(self, data, id_task=None, percent=0):
@@ -819,7 +819,7 @@ class ServiceRepo:
             for item in tasks:
                 values.append((service_id, False, item, task_id, parcent, page))
 
-            execute_values(cur=cursor, sql=insert, argslist=values, page_size=500)
+            execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
         conn.close()
 
     def addQueueTask(self, tasks, task_id, parcent, serviceId):
@@ -838,5 +838,5 @@ class ServiceRepo:
             for item in tasks:
                 values.append((serviceId, False, item, task_id, parcent, page))
 
-            execute_values(cur=cursor, sql=insert, argslist=values, page_size=500)
+            execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
         conn.close()
