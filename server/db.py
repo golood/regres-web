@@ -788,7 +788,7 @@ class ServiceRepo:
         with conn.cursor() as cursor:
             conn.autocommit = True
 
-            select = 'SELECT id FROM service_list WHERE launch IS TRUE AND (now() AT TIME ZONE "Asia/Irkutsk" - last_active)::time < "00:00:12"::time'
+            select = "SELECT id FROM service_list WHERE launch IS TRUE AND (now() AT TIME ZONE 'Asia/Irkutsk' - last_active)::time < '00:00:12'::time"
 
             cursor.execute(select)
             rows = cursor.fetchall()
