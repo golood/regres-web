@@ -1,3 +1,6 @@
+DO LANGUAGE plpgsql
+  $$
+BEGIN
 CREATE SEQUENCE user_session_id_seq START 1;
 create table user_session (
     id                   bigint NOT NULL PRIMARY KEY default nextval('user_session_id_seq'),
@@ -20,6 +23,12 @@ create table matrix (
   row_id                 bigint NOT NULL,
   column_id              bigint NOT NULL,
   value                  text NOT NULL
+);
+
+CREATE SEQUENCE tasks_id_seq START 1;
+create table tasks (
+  id                     bigint NOT NULL PRIMARY KEY DEFAULT nextval('tasks_id_seq'),
+  type                   text
 );
 
 CREATE SEQUENCE worker_id_seq START 1;
@@ -45,11 +54,6 @@ create table result (
   n2                     text
 );
 
-CREATE SEQUENCE tasks_id_seq START 1;
-create table tasks (
-  id                     bigint NOT NULL PRIMARY KEY DEFAULT nextval('tasks_id_seq'),
-  type                   text
-);
 
 create table tasks_to_resalt (
   id_tasks               bigint NOT NULL REFERENCES tasks (id),
@@ -81,3 +85,4 @@ create table queue_task (
   task_id                bigint,
   parcent                decimal
 );
+END$$;

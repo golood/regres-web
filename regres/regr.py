@@ -9,9 +9,19 @@ from itertools import combinations
 import threading
 from server.db import ResultRepo, WorkerRepo, ServiceRepo
 import time
+import requests
+import redis
+import server.config as config
+from queue import Queue
 
 sys.setrecursionlimit(1000000000)
 
+red = redis.Redis(
+    host=config.redis_host,
+    port=config.redis_port,
+    decode_responses=True)
+
+threadLock = threading.Lock()
 # x = np.array([[2., 5.],
 #           [9., 4.],
 #           [6., 1.],
@@ -110,6 +120,7 @@ class Method:
         for i in range(1, len(self.a)):
             a -= self.a[i]
         return a
+
 
 class MNK(Method):
 
@@ -240,14 +251,48 @@ class TaskMCO:
         self.method.run()
 
     def getResaults(self):
-        resaults = []
-
-        resaults.append(self.method.getResaul())
-        resaults.append(self.method.getSmeshenir())
-        resaults.append(self.method.h1)
-        resaults.append(self.method.h2)
+        resaults = [self.method.getResaul(),
+                    self.method.getSmeshenir(),
+                    self.method.h1,
+                    self.method.h2]
 
         return resaults
+
+
+class RequestWorker(threading.Thread):
+    """Потоковый отправитель запросов в воркеры."""
+
+    def __init__(self, queue, counter, percent, task_id):
+        threading.Thread.__init__(self)
+        self.threadID = counter
+        self.queue = queue
+        self.x = red.get('x')
+        self.y = red.get('y')
+        self.percent = percent
+        self.task_id = task_id
+
+    def run(self):
+        while True:
+            start = time.time()
+            index = self.queue.get()
+            data = self.send_request(index)
+
+            threadLock.acquire()
+            ResultRepo().addResults(data['answer'], self.task_id, self.percent)
+            threadLock.release()
+            self.queue.task_done()
+
+            print((time.time() - start))
+
+    def send_request(self, index):
+        data = {'index': index,
+                'x': self.x,
+                'y': self.y,
+                'list_h': red.get(index)}
+
+        response = requests.post(config.url_worker, json=data)
+
+        return json.loads(response.content.decode('utf-8'))
 
 
 class TaskPerebor:
@@ -259,30 +304,32 @@ class TaskPerebor:
     def __init__(self, x, y, massiv):
         self.x = x
         self.y = y
+        red.mset({'x': json.dumps(x)})
+        red.mset({'y': json.dumps(y)})
         self.massiv = massiv
         self.tasks = []
-        self.repoRes = ResultRepo()
-        self.task_id = self.repoRes.createTask()
-
-        repo = ServiceRepo()
-        self.serviceIds = repo.getRuningServiceIds()
+        self.index = []
+        self.task_id = ResultRepo().createTask()
 
     def run(self):
         self.getAllComb()
 
-    def addTasksInService(self, serviceId):
+    def create_task_package(self):
         '''
-        Добавляет собранные задач ЛП в очередь сервисов.
+        Собирает в пакет набор задач.
         '''
 
-        tasksDTO = []
-        for item in self.tasks:
-            tasksDTO.append(json.dumps(item, cls=self.TaskDTO.DataEncoder))
+        queue = Queue()
+        percent = float('{:.3f}'.format(self.percent))
+        for i in range(int(config.worker_thread)):
+            t = RequestWorker(queue, i, percent, self.task_id)
+            t.setDaemon(True)
+            t.start()
 
-        serviceRepo = ServiceRepo()
-        serviceRepo.addQueueTask(tasksDTO, self.task_id, self.percent, serviceId)
+        for i in self.index:
+            queue.put(str(i))
 
-        del tasksDTO
+        queue.join()
         self.tasks = []
 
     def getAllComb(self):
@@ -295,38 +342,47 @@ class TaskPerebor:
         len_x = len(self.massiv)
         k = len_x // 2
         size = math.factorial(len_x) / (math.factorial(len_x - k) * math.factorial(k))
-        step = 1000
+        step = int(config.count_package)
 
         self.percent = step / (size / 100)
-        if self.percent > 100:
+        if self.percent >= 100:
             self.percent = 100
 
-        indexService = 0
-        maxIndex = len(self.serviceIds) - 1
         counter = 0
+        i = 0
         for h1 in combinations(self.massiv, k):
             counter += 1
             h2 = tuple(filter(lambda x: (x not in h1), self.massiv))
 
-            self.tasks.append(self.TaskDTO(self.x, self.y, h1, h2))
+            self.tasks.append({'h1': h1, 'h2': h2})
 
             if counter % step == 0:
-                self.addTasksInService(self.serviceIds[indexService])
+                self.index.append(i)
+                red.mset({str(i): json.dumps(self.tasks)})
+                i += 1
                 counter = 0
-                if indexService == maxIndex:
-                    indexService = 0
-                else:
-                    indexService += 1
+                self.tasks = []
 
         if counter != 0:
-            self.addTasksInService(self.serviceIds[indexService])
+            self.index.append(i)
+            red.mset({str(i): json.dumps(self.tasks)})
+            self.tasks = []
+
+        self.create_task_package()
 
         while True:
             repoWorker = WorkerRepo()
             if repoWorker.isComplete(self.task_id):
                 repoWorker.complete(self.task_id)
                 break
-            time.sleep(5)
+            time.sleep(2)
+
+    def clear_redis_data(self):
+        for i in self.index:
+            red.delete(str(i))
+
+        red.delete('x')
+        red.delete('y')
 
     def getResult(self):
         resaults = []

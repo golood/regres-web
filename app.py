@@ -465,4 +465,4 @@ def checkProgress():
 
 if __name__ == '__main__':
     # Will make the server available externally as well
-    app.run()
+    app.run(host='0.0.0.0')

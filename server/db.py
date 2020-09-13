@@ -11,11 +11,11 @@ def getConnection():
     :return: соединение с БД.
     '''
 
-    conn = psycopg2.connect(dbname=config.database,
-                            user=config.user,
-                            password=config.password,
-                            host=config.host,
-                            port=config.port)
+    conn = psycopg2.connect(dbname=config.postgres_db,
+                            user=config.postgres_user,
+                            password=config.postgres_password,
+                            host=config.postgres_host,
+                            port=config.postgres_port)
     return conn
 
 class UserSessionRepo:
@@ -301,8 +301,8 @@ class ResultRepo:
             for item in results:
                 values.append((str(item[0]),
                                str(item[1]),
-                               str(item[2]),
-                               str(item[3]),
+                               str(item[2]) if str(item[2]) not in 'Infinity' else None,
+                               str(item[3]) if str(item[3]) not in 'Infinity' else None,
                                str(item[4]),
                                str(item[5]),))
 
@@ -440,8 +440,7 @@ class ResultRepo:
                         FROM tasks t
                           JOIN tasks_to_resalt ttr on t.id = ttr.id_tasks
                           JOIN result r on ttr.id_result = r.id
-                        WHERE t.id = %s
-                        ''' + sorting_p + filter_p
+                        WHERE t.id = %s''' + sorting_p + filter_p
             cursor.execute(select, (id,))
 
             rows = cursor.fetchall()
