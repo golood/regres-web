@@ -4,11 +4,11 @@ Click==7.0
 Flask==1.1.1
 idna==2.10
 itsdangerous==1.1.0
-Jinja2==2.11.1
+Jinja2==2.11.2
 MarkupSafe==1.1.1
 numpy==1.18.1
-psycopg2==2.8.4
-PuLP==2.0
+psycopg2==2.8.5
+PuLP==2.3
 pyparsing==2.4.6
 redis==3.5.3
 requests==2.24.0
