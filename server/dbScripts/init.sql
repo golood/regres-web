@@ -1,6 +1,3 @@
-DO LANGUAGE plpgsql
-  $$
-BEGIN
 CREATE SEQUENCE user_session_id_seq START 1;
 create table user_session (
     id                   bigint NOT NULL PRIMARY KEY default nextval('user_session_id_seq'),
@@ -85,4 +82,3 @@ create table queue_task (
   task_id                bigint,
   parcent                decimal
 );
-END$$;

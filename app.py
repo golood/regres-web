@@ -28,12 +28,12 @@ app.permanent_session_lifetime = datetime.timedelta(hours=3)
 
 
 def allowed_file(filename):
-    '''
+    """
     Проверяет соответсвие расширений файлов к разрешённым.
     :param filename: имя загруженного файла.
     :return: True, если файл соовтетствует маске,
              False, если файл не соответствует маске.
-    '''
+    """
 
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -313,14 +313,12 @@ def div_matrix():
 
     meta_data = MetaData(json.loads(session['meta_data']))
 
+    task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
+
     filter_id = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
     sorting_id = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
 
-    repo_worker = WorkerRepo()
-    task_id = repo_worker.getTaskInLastWorkerByUser(meta_data.user_session_id)
-
-    repo = ResultRepo()
-    result = repo.getTaskByBestBiasEstimates(task_id, filter_id, sorting_id)
+    result = ResultRepo.get_task_by_best_bias_estimates(task_id, filter_id, sorting_id)
 
     is_auto = False
     if len(result) != 0:
@@ -416,8 +414,7 @@ def auto():
     task.start()
     time.sleep(1)
 
-    repo = WorkerRepo()
-    is_run = repo.isRun(workerId=task.id)
+    is_run = WorkerRepo.is_run(worker_id=task.id)
 
     return render_template('div_matrix.html',
                            isRun=is_run,
@@ -442,17 +439,15 @@ def bias_estimates():
 
     meta_data = MetaData(json.loads(session['meta_data']))
 
-    filter_id = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
-    sorting_id = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
-
-    repo_worker = WorkerRepo()
-    task_id = repo_worker.getTaskInLastWorkerByUser(meta_data.user_session_id)
+    task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
 
     if task_id is None:
         return redirect(url_for('div_matrix'))
 
-    repo = ResultRepo()
-    result = repo.getTaskByBestBiasEstimates(task_id, filter_id, sorting_id)
+    filter_id = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
+    sorting_id = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
+
+    result = ResultRepo.get_task_by_best_bias_estimates(task_id, filter_id, sorting_id)
 
     return render_template('bias_estimates.html',
                            auto=True,
@@ -474,9 +469,8 @@ def check_progress():
 
     meta_data = MetaData(json.loads(session['meta_data']))
 
-    repo_worker = WorkerRepo()
-    task_id = repo_worker.getTaskInLastWorkerByUser(meta_data.user_session_id)
-    status, count = repo_worker.isDone(task_id)
+    task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
+    status, count = WorkerRepo.is_done(task_id)
 
     return {'status': status, 'count': float('{:.2f}'.format(count))}
 

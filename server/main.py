@@ -2,8 +2,8 @@
 import json
 from threading import Thread
 
-from regres.regr import Task, TaskPerebor
-from server import db
+from regres.regressionAPI import Task, TaskBiasEstimates
+from server.db import WorkerRepo
 from server.logger import logger
 
 log = logger.get_logger('server')
@@ -109,35 +109,6 @@ class DataEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class Result:
-
-    def __init__(self, data):
-        if data is None:
-            self.results = []
-        else:
-            self.results = []
-            self._res(data)
-
-    def _res(self, data):
-        for item in data:
-            self.results.append(TaskRes(item))
-
-
-class TaskRes:
-
-    def __init__(self, data):
-        if data is None:
-            self.name = None
-            self.alfa = None
-            self.eps = None
-            self.E = None
-        else:
-            self.name = data['name']
-            self.alfa = data['alfa']
-            self.eps = data['eps']
-            self.E = data['E']
-
-
 class Test:
 
     def __init__(self, tasks=None, x=None, y=None, h1=None, h2=None):
@@ -167,7 +138,7 @@ class WorkerTask(Thread):
         self.x = x
         self.y = y
         self.indices_x = self._init_list(len(x))
-        self.task = TaskPerebor(x=self.x, y=self.y, indices_x=self.indices_x)
+        self.task = TaskBiasEstimates(x=self.x, y=self.y, indices_x=self.indices_x)
         self.task_id = self.task.task_id
         self.__build_worker()
         log.info('Create task name: {0}, id: {1}, userId: {2}'
@@ -175,8 +146,7 @@ class WorkerTask(Thread):
 
     def run(self):
         """Запуск потока"""
-        repo = db.WorkerRepo()
-        if repo.runWorker(self.id):
+        if WorkerRepo.run_worker(self.id):
             log.info('The task ({0}) start, workerId: {1}'
                      .format(self.task_id, self.id))
             self.task.run()
@@ -197,8 +167,8 @@ class WorkerTask(Thread):
         :param user_id: идентификатор пользователя.
         """
 
-        repo = db.WorkerRepo()
-        self.id = repo.createNewWorker(user_id)
+        repo = WorkerRepo()
+        self.id = repo.create_new_worker(user_id)
 
     def __build_worker(self):
         """
@@ -206,5 +176,4 @@ class WorkerTask(Thread):
         себе в БД.
         """
 
-        repo = db.WorkerRepo()
-        repo.buildWorker(self.id, self.name, self.task_id)
+        WorkerRepo.build_worker(self.id, self.name, self.task_id)

@@ -11,7 +11,7 @@ import numpy as np
 import redis
 import requests
 
-import regres.rrrr as rrr
+import regres.regression as regression
 import server.config as config
 from server.db import ResultRepo, WorkerRepo
 from server.logger import logger
@@ -57,20 +57,22 @@ class Method:
         self.nz = None
 
     def _y(self, alfa):
-        A = list(map(lambda item:
-                     list(map(lambda x, a: x * a, item,
-                              alfa)),
-                     self.x))
-        A = list(map(lambda item:
-                     reduce(lambda x, y: x + y, item), A))
+        matrix_a = list(map(lambda item: list(map(lambda x, a: x * a, item, alfa)), self.x))
+        matrix_a = list(map(lambda item: reduce(lambda x, y: x + y, item), matrix_a))
 
-        return A
+        return matrix_a
 
     def epsilon(self, alfa):
+        """
+        Расчёт ошибок аппроксимации.
+        """
         return list(
             map(lambda x, y: y - x, self._y(alfa), self.y))
 
     def epsilon_e(self, alfa):
+        """
+        Расчёт оценки ошибки аппроксимации.
+        """
         e = 1 / len(self.y) * reduce(
             lambda x, y: x + y,
             list(map(lambda x, y: math.fabs((y - x) / y),
@@ -80,7 +82,7 @@ class Method:
 
     def calculation_m(self):
         """
-        Расчет суммы модулей ошибок.
+        Расчёт суммы модулей ошибок.
         """
 
         for item in self.eps:
@@ -88,7 +90,7 @@ class Method:
 
     def calculation_k(self):
         """
-        Расчет суммы квадратов ошибок.
+        Расчёт суммы квадратов ошибок.
         """
 
         for item in self.eps:
@@ -163,9 +165,9 @@ class MNM(Method):
         pass
 
     def run(self):
-        task = rrr.LpSolve_MNM(self.x, self.y)
+        task = regression.LpSolveMNM(self.x, self.y)
         task.run()
-        self.a, self.eps = task.getResault()
+        self.a, self.eps = task.get_result()
         self.e = self.epsilon_e(self.a)
         self.calculation_m()
         self.calculation_k()
@@ -184,9 +186,9 @@ class MAO(Method):
         pass
 
     def run(self):
-        task = rrr.LpSolve_MAO(self.x, self.y)
+        task = regression.LpSolveMAO(self.x, self.y)
         task.run()
-        self.a, self.eps = task.getResault()
+        self.a, self.eps = task.get_result()
         self.e = self.epsilon_e(self.a)
         self.calculation_m()
         self.calculation_k()
@@ -207,9 +209,9 @@ class MCO(Method):
         pass
 
     def run(self):
-        task = rrr.LpSolve_MCO(self.x, self.y, self.h1, self.h2)
+        task = regression.LpSolveMCO(self.x, self.y, self.h1, self.h2)
         task.run()
-        self.a, self.eps = task.getResault()
+        self.a, self.eps = task.get_result()
         self.e = self.epsilon_e(self.a)
         self.calculation_m()
         self.calculation_k()
@@ -266,8 +268,8 @@ class RequestWorker(threading.Thread):
 
             threadLock.acquire()
             if data is not None:
-                ResultRepo().addResults(data['answer'], self.task_id,
-                                        self.percent)
+                ResultRepo().add_results(data['answer'], self.task_id,
+                                         self.percent)
             threadLock.release()
             self.queue.task_done()
 
@@ -295,7 +297,7 @@ class RequestWorker(threading.Thread):
         return None
 
 
-class TaskPerebor:
+class TaskBiasEstimates:
     """
     Класс задачи для решения задачи поиска критерия смещения, перебором
     комбинаций подматриц Н1, Н2.
@@ -310,7 +312,7 @@ class TaskPerebor:
         self.indices_x = indices_x
         self.tasks = []
         self.index = []
-        self.task_id = ResultRepo().create_task()
+        self.task_id = ResultRepo.create_task()
 
     def run(self):
         self.get_all_combinations()
@@ -374,9 +376,8 @@ class TaskPerebor:
         self.create_task_package()
 
         while True:
-            repo_worker = WorkerRepo()
-            if repo_worker.isComplete(self.task_id):
-                repo_worker.complete(self.task_id)
+            if WorkerRepo.is_complete(self.task_id):
+                WorkerRepo.complete(self.task_id)
                 break
             time.sleep(2)
 
@@ -408,7 +409,7 @@ class TaskPerebor:
             """
 
             def default(self, obj):
-                if isinstance(obj, TaskPerebor.TaskDTO):
+                if isinstance(obj, TaskBiasEstimates.TaskDTO):
                     return obj.__dict__
                 return json.JSONEncoder.default(self, obj)
 
