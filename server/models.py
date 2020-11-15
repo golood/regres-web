@@ -1,6 +1,12 @@
 #!/usr/bin/python3
 import json
+
 from server import db
+from server.logger import logger
+
+import deprecation
+
+log = logger.get_logger('server')
 
 
 class MetaData:
@@ -10,7 +16,7 @@ class MetaData:
     '''
 
     def __init__(self, data):
-        if data == None:
+        if data is None:
             self.session_id = None
             self.user_session_id = None
 
@@ -67,87 +73,90 @@ class MetaData:
 
             self.answer = data['answer']
 
-    def addSession(self, session_id, ip):
-        '''
+    def add_session(self, session_id, ip):
+        """
         Добавляет запись о новой сессии в БД.
 
         :param session_id: Сгенерированный идентификатор сессии.
         :param ip: Адресс клиента.
-        '''
+        """
 
         user_session_db = db.UserSessionRepo()
 
         self.session_id = session_id
         user_session_id = user_session_db.add(session_id, ip)
         self.user_session_id = user_session_id
+        log.debug(f'Create new session: {user_session_id}')
 
-    def addLoadFile(self, filename):
-        '''
+    def add_load_file(self, filename):
+        """
         Добавляет запись о загрузке нового файла.
         :param filename: имя загруженного файла.
         :return имя файла.
-        '''
+        """
 
         filename = '{}-{}'.format(self.user_session_id, filename)
-        filesRepo = db.LoadFilesRepo()
-        self.file_id = filesRepo.addFile(self.user_session_id, filename)
+        files_repo = db.LoadFilesRepo()
+        self.file_id = files_repo.add_file(self.user_session_id, filename)
 
         return filename
 
-    def addLoadMatrix(self, matrix):
-        '''
+    def add_load_matrix(self, matrix):
+        """
         Добавляет созруженную матрицу. Делает загруженную матрицу рабочей.
         :param matrix: загруженная матрица.
-        '''
+        """
 
         self.len_x_load_matrix = len(matrix[0])
         self.len_load_matrix = len(matrix)
         self.len_x_work_matrix = self.len_x_load_matrix
         self.len_work_matrix = self.len_load_matrix
 
-        matrixRepo = db.MatrixRepo()
-        self.load_matrix_id = matrixRepo.addMatrix(matrix)
+        matrix_repo = db.MatrixRepo()
+        self.load_matrix_id = matrix_repo.add_matrix(matrix)
         self.work_matrix_id = self.load_matrix_id
 
-    def addWorkMatrix(self, matrix):
-        '''
+    def add_work_matrix(self, matrix):
+        """
         Добавляет новую рабочу матрицу.
         :param matrix: рабочая матрица
-        '''
+        """
 
-        matrixRepo = db.MatrixRepo()
-        self.work_matrix_id = matrixRepo.addMatrix(matrix)
+        matrix_repo = db.MatrixRepo()
+        self.work_matrix_id = matrix_repo.add_matrix(matrix)
+        self.len_x_work_matrix = len(matrix[0])
+        self.len_work_matrix = len(matrix)
 
     def set_y(self, index_y):
-        '''
+        """
         Устанавливает зависимую переменную. Сохраняет в БД.
         :param index_y: индекс с столбца с зависимой переменной.
-        '''
+        """
 
-        matrixRepo = db.MatrixRepo()
+        matrix_repo = db.MatrixRepo()
 
         self.index_y = index_y
         y = []
-        for items in matrixRepo.getMatrix(self.work_matrix_id):
+        for items in matrix_repo.get_matrix(self.work_matrix_id):
             index = 0
             for item in items:
                 if index == index_y:
                     y.append(item)
                 index += 1
 
-        self.matrix_y_index = matrixRepo.setRow(y)
+        self.matrix_y_index = matrix_repo.set_row(y)
 
-        self.setMatrix_x()
+        self.set_matrix_x()
 
-    def setMatrix_x(self):
-        '''
+    def set_matrix_x(self):
+        """
         Устанавливает матрицу х. Сохраняет в БД.
-        '''
+        """
 
-        matrixRepo = db.MatrixRepo()
+        matrix_repo = db.MatrixRepo()
 
         x = []
-        for items in matrixRepo.getMatrix(self.work_matrix_id):
+        for items in matrix_repo.get_matrix(self.work_matrix_id):
             line = []
             index = 0
             for item in items:
@@ -164,110 +173,115 @@ class MetaData:
                     line.append(item)
                 new_x.append(line)
 
-            self.matrix_x_index = matrixRepo.addMatrix(new_x)
+            self.matrix_x_index = matrix_repo.add_matrix(new_x)
             return
 
-        self.matrix_x_index = matrixRepo.addMatrix(x)
+        self.matrix_x_index = matrix_repo.add_matrix(x)
 
-    def getMetrix(self, matrixId):
-        '''
+    @staticmethod
+    def get_matrix(matrix_id):
+        """
         Получает матрицу по идентификатору.
-        :param matrixId: идентификатор матрицы.
+        :param matrix_id: идентификатор матрицы.
         :return: матрицу вида [[],[],].
-        '''
+        """
 
-        matrixRepo = db.MatrixRepo()
+        matrix_repo = db.MatrixRepo()
 
-        return matrixRepo.getMatrix(matrixId)
+        return matrix_repo.get_matrix(matrix_id)
 
-    def getRow(self, rowId):
-        '''
+    @staticmethod
+    def get_row(row_id):
+        """
         Получает вектор по идентификатору.
-        :param rowId: идентификатор вектора.
+        :param row_id: идентификатор вектора.
         :return: массив (вектор) в виде листа значений.
-        '''
+        """
 
-        matrixRepo = db.MatrixRepo()
+        matrix_repo = db.MatrixRepo()
 
-        return matrixRepo.getRow(rowId)
+        return matrix_repo.get_row(row_id)
 
-    def setH1H2(self, h1, h2):
-        '''
+    def set_h1_h2(self, h1, h2):
+        """
         Устанавливает подматрицы Н1, Н2.
         :param h1: идентификаторы строк целевой матрицы, образующие подматрицу Н1.
         :param h2: идентификаторы строк целевой матрицы, образующие подматрицу Н2.
-        '''
+        """
 
-        matrixRepo = db.MatrixRepo()
+        matrix_repo = db.MatrixRepo()
 
-        self.index_h1 = matrixRepo.setRow(h1)
-        self.index_h2 = matrixRepo.setRow(h2)
+        self.index_h1 = matrix_repo.set_row(h1)
+        self.index_h2 = matrix_repo.set_row(h2)
 
-    def getCheckTask(self):
-        '''
+    def get_check_task(self):
+        """
         Получает лист с состояниями выбора методов решения задачи.
         Выбранные методы для решения задачи помечены как True,
         в противном случае False
 
         :return: лист с состояниями выбора задач.
-        '''
+        """
 
         return [self.mnk, self.mnm, self.mao, self.mco]
 
-    def updateTimeActiv(self):
-        '''
+    def update_time_active(self):
+        """
         Обновляет время активности клиента.
-        '''
+        """
 
+        log.info('updateTimeActive')
         user_session_db = db.UserSessionRepo()
-        user_session_db.updateUserActive(self.user_session_id)
+        user_session_db.update_user_active(self.user_session_id)
 
     class DataEncoder(json.JSONEncoder):
-        '''
+        """
         Класс кодирует модель Data в JSON формат.
-        '''
+        """
         def default(self, obj):
             if isinstance(obj, MetaData):
                 return obj.__dict__
             return json.JSONEncoder.default(self, obj)
 
 
+@deprecation.deprecated(deprecated_in='1.0.2', removed_in='1.2.0')
 class Worker:
-    '''
+    """
     Класс описывает сущность, которая выполняет задачи в фоновом режиме.
-    '''
+    """
 
-    def __init__(self, userId=None):
+    def __init__(self, user_id=None):
+        self.task = None
+        self.name = None
         self.repo = db.WorkerRepo()
-        self.__createWorker(userId)
+        self.__create_worker(user_id)
 
-
-    def __createWorker(self, userId):
-        '''
+    def __create_worker(self, user_id):
+        """
         Создаёт в БД нового работника. Получает идентификатор работника.
-        :param userId: идентификатор пользователя.
-        '''
+        :param user_id: идентификатор пользователя.
+        """
 
-        self.id = self.repo.createNewWorker(userId)
+        self.id = self.repo.createNewWorker(user_id)
 
-    def buildWorker(self, task, name):
-        '''
+    def build_worker(self, task, name):
+        """
         Собирает работника. Получает задачу для работника. Привязывает её к
         себе в БД.
         :param task: выфполняемая задача.
         :param name: имя задачи.
-        '''
+        """
 
         self.task = task
         self.name = name
         self.repo.buildWorker(self.id, self.name, self.task.task_id)
 
     def run(self):
-        '''
+        """
         Запуск работника.
         :return: True, в случае успешного запуска.
                  False, в случае блокировки.
-        '''
+        """
         if not self.repo.runWorker(self.id):
             return False
 

@@ -1,66 +1,71 @@
 #!/usr/bin/python3
 import datetime
-import server.utill as util
+
 import psycopg2
-import server.config as config
 from psycopg2.extras import execute_values
 
-def getConnection():
-    '''
+import server.config as config
+import server.utill as util
+
+
+def get_connection():
+    """
     Получает соединения с БД.
     :return: соединение с БД.
-    '''
+    """
 
-    conn = psycopg2.connect(dbname=config.postgres_db,
-                            user=config.postgres_user,
-                            password=config.postgres_password,
-                            host=config.postgres_host,
-                            port=config.postgres_port)
+    conn = psycopg2.connect(dbname=config.POSTGRES_DB,
+                            user=config.POSTGRES_USER,
+                            password=config.POSTGRES_PASSWORD,
+                            host=config.POSTGRES_HOST,
+                            port=config.POSTGRES_PORT)
     return conn
 
-class UserSessionRepo:
-    '''
-    Репозитория для получения, записи данных пользователя сессии.
-    '''
 
-    def add(self, sessionId, ip):
-        '''
+class UserSessionRepo:
+    """
+    Репозитория для получения, записи данных пользователя сессии.
+    """
+
+    @staticmethod
+    def add(session_id, ip):
+        """
         Добавляет данные о новой сессии.
 
-        :param sessionId: клиентский идентификатор сессии.
+        :param session_id: клиентский идентификатор сессии.
         :param ip: адрес клиента.
         :return: серверный идентификатор клиента сессии.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
-            dateTime = datetime.datetime.now()
-            values = (sessionId, dateTime, dateTime, ip)
+            date_time = datetime.datetime.now()
+            values = (session_id, date_time, date_time, ip)
 
             insert = 'INSERT INTO user_session (session_id, date_create, date_last_active, ip_adress) ' \
                      + 'VALUES (%s, %s, %s, %s) RETURNING id'
 
             cursor.execute(insert, values)
 
-            self.id = cursor.fetchone()[0]
+            answer = cursor.fetchone()[0]
 
-        conn.close()
-        return self.id
+        return answer
 
-    def updateUserActive(self, userId):
-        '''
+    @staticmethod
+    def update_user_active(user_id):
+        """
         Обновляет время последней активности клиента.
-        :param userId: серверный идентификатор клиента.
-        '''
+        :param user_id: серверный идентификатор клиента.
+        """
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
-            dateTime = datetime.datetime.now()
-            values = (dateTime, userId)
+            date_time = datetime.datetime.now()
+            values = (date_time, user_id)
 
             update = 'UPDATE user_session SET date_last_active = %s WHERE id = %s'
 
@@ -69,47 +74,48 @@ class UserSessionRepo:
 
 
 class LoadFilesRepo:
-    '''
+    """
     Репозиторий для получения, записи данных для файлов.
-    '''
+    """
 
-    def addFile(self, userId, fileName):
-        '''
+    @staticmethod
+    def add_file(user_id, filename):
+        """
         Привязывает загруженный файл к пользователю..
-        :param userId: идентификатор пользователя.
-        :param fileName: имя файла.
+        :param user_id: идентификатор пользователя.
+        :param filename: имя файла.
         :return: идентификатор файла.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
-            values = (userId, fileName)
+            values = (user_id, filename)
 
             insert = 'INSERT INTO load_files (user_id, file_name) ' \
                      + 'VALUES (%s, %s) RETURNING id'
 
             cursor.execute(insert, values)
 
-            self.id = cursor.fetchone()[0]
+            answer = cursor.fetchone()[0]
 
-        conn.close()
-        return self.id
+        return answer
 
 
 class MatrixRepo:
-    '''
+    """
     Репозиторий для работы с данными матриц.
-    '''
+    """
 
-    def getNewIndex(self):
-        '''
+    @staticmethod
+    def get_new_index():
+        """
         Получает новый индентификатор.
         :return: новый идентификатор.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -118,49 +124,49 @@ class MatrixRepo:
 
             cursor.execute(select)
 
-            self.id = cursor.fetchone()[0]
+            answer = cursor.fetchone()[0]
 
-        conn.close()
-        return self.id
+        return answer
 
-    def addMatrix(self, matrix):
-        '''
+    def add_matrix(self, matrix):
+        """
         Добавляет матрицу с числовыми значениями.
         :param matrix: матрица вида [[],[],].
         :return: идентификатор матрицы.
-        '''
+        """
 
-        id = self.getNewIndex()
+        matrix_id = self.get_new_index()
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
-            insert = 'INSERT INTO matrix (id, row_id, column_id, value) VALUES (%s, %s, %s, %s)'
+            insert = 'INSERT INTO matrix (id, row_id, column_id, value) VALUES %s'
 
-
+            values = []
             row_id = 0
             for row in matrix:
                 column_id = 0
                 for item in row:
-                    values = (id, row_id, column_id, item)
-                    cursor.execute(insert, values)
+                    values.append((matrix_id, row_id, column_id, str(item),))
                     column_id += 1
                 row_id += 1
 
-        conn.close()
-        return id
+            execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
 
-    def getMatrix(self, matrix_id):
-        '''
+        return matrix_id
+
+    @staticmethod
+    def get_matrix(matrix_id):
+        """
         Получает матрицу.
         :param matrix_id: идентификатор матрицы.
         :return: матрицу с числовыми значениями вида [[],[],]
-        '''
+        """
 
         matrix = []
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -178,51 +184,51 @@ class MatrixRepo:
                 else:
                     matrix.append(line)
                     row_num += 1
-                    line = []
-                    line.append(util.format_number(row[2]))
+                    line = [util.format_number(row[2])]
             matrix.append(line)
 
-        conn.close()
         return matrix
 
-    def setRow(self, row):
-        '''
+    def set_row(self, row):
+        """
         Добавляет массив чисел.
         :param row: массив чисел.
         :return: идентификатор массива.
-        '''
+        """
 
-        id = self.getNewIndex()
+        row_id = self.get_new_index()
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
-            insert = 'INSERT INTO matrix (id, row_id, column_id, value) VALUES (%s, %s, %s, %s)'
+            insert = 'INSERT INTO matrix (id, row_id, column_id, value) VALUES %s'
 
+            values = []
             column_id = 0
             for item in row:
-                values = (id, 0, column_id, item)
-                cursor.execute(insert, values)
+                values.append((row_id, 0, column_id, str(item),))
                 column_id += 1
 
-        conn.close()
-        return id
+            execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
 
-    def getRow(self, id):
-        '''
+        return row_id
+
+    @staticmethod
+    def get_row(row_id):
+        """
         Получает массив чисел.
-        :param id: идентификатор массива.
+        :param row_id: идентификатор массива.
         :return: массив чисел.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
 
             select = 'SELECT row_id, column_id, "value" FROM matrix WHERE id = %s ORDER BY row_id, column_id'
-            cursor.execute(select, (id,))
+            cursor.execute(select, (row_id,))
 
             rows = cursor.fetchall()
 
@@ -230,22 +236,22 @@ class MatrixRepo:
             for row in rows:
                 line.append(util.format_number(row[2]))
 
-        conn.close()
         return line
 
 
 class ResultRepo:
-    '''
+    """
     Репозитория для работы с данными результов вычислений.
-    '''
+    """
 
-    def getNewIndex(self):
-        '''
+    @staticmethod
+    def get_new_index():
+        """
         Получает новый идентификатор результов вычислений.
         :return: новый идентификатор.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -254,23 +260,24 @@ class ResultRepo:
 
             cursor.execute(select)
 
-            id = cursor.fetchone()[0]
+            result_id = cursor.fetchone()[0]
 
-        conn.close()
-        return id
+        return result_id
 
-    def setResult(self, result):
-        '''
+    @staticmethod
+    def set_result(result):
+        """
         Добавляет результаты вычислений.
         :param result: результаты вычислений.
         :return: идентификатор результатов вычислений.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
-            insert = 'INSERT INTO result (alfa, epselon, e, bias_estimates, n1, n2) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id'
+            insert = 'INSERT INTO result (alfa, epselon, e, bias_estimates, n1, n2) VALUES (%s, %s, %s, %s, %s, %s) ' \
+                     'RETURNING id'
 
             values = (str(result[0]),
                       str(result[1]),
@@ -281,17 +288,17 @@ class ResultRepo:
 
             cursor.execute(insert, values)
 
-        conn.close()
         return cursor.fetchone()[0]
 
-    def setResults(self, results):
-        '''
+    @staticmethod
+    def set_results(results):
+        """
         Добавляет результаты вычислений.
-        :param result: результаты вычислений.
+        :param results: результаты вычислений.
         :return: идентификатор результатов вычислений.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -308,17 +315,17 @@ class ResultRepo:
 
             id_res = execute_values(cur=cursor, sql=insert, argslist=values, fetch=True, page_size=200)
 
-        conn.close()
         return id_res
 
-    def createTask(self, type=None):
-        '''
+    @staticmethod
+    def create_task(type_task=None):
+        """
         Создаёт новый идентификатор для задачи.
-        :param type: тип задачи.
+        :param type_task: тип задачи.
         :return: новый идентификатор.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -326,22 +333,22 @@ class ResultRepo:
             select = "select nextval('tasks_id_seq')"
 
             cursor.execute(select)
-            id = cursor.fetchone()[0]
+            task_id = cursor.fetchone()[0]
 
-            insert = 'INSERT INTO tasks (id) VALUES (%s)'
-            cursor.execute(insert, (id,))
+            insert = 'INSERT INTO tasks (id, type) VALUES (%s, %s)'
+            cursor.execute(insert, (task_id, type_task))
 
-        conn.close()
-        return id
+        return task_id
 
-    def addTasksToResalt(self, id_task, id_res):
-        '''
+    @staticmethod
+    def add_tasks_to_result(id_task, id_res):
+        """
         Добавляет связь задачи к результатам вычислений.
         :param id_task: идентификатор задачи.
         :param id_res: идентификатор результатов вычислений.
-        '''
+        """
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -365,11 +372,11 @@ class ResultRepo:
         repoWorker = WorkerRepo()
 
         if id_task == None:
-            id_task = self.createTask()
+            id_task = self.create_task()
 
 
-        id_res = self.setResults(data)
-        self.addTasksToResalt(id_task, id_res)
+        id_res = self.set_results(data)
+        self.add_tasks_to_result(id_task, id_res)
         repoWorker.updateCount(id_task, percent)
 
 
@@ -380,7 +387,7 @@ class ResultRepo:
         :return: массив с результатами вычислений.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -431,7 +438,7 @@ class ResultRepo:
         elif sotringId == 3:
             sorting_p = ' ORDER BY r.e::numeric '
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -469,7 +476,7 @@ class WorkerRepo:
         :return: новый идентификатор.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -493,7 +500,7 @@ class WorkerRepo:
 
         id = self.getNewIndex()
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -514,7 +521,7 @@ class WorkerRepo:
         :param taskId: идентификатор задачи.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -536,7 +543,7 @@ class WorkerRepo:
         repoBloker = BlockerRepo()
 
         if repoBloker.isAllowedRunNewWorker():
-            conn = getConnection()
+            conn = get_connection()
             with conn.cursor() as cursor:
                 conn.autocommit = True
 
@@ -559,7 +566,7 @@ class WorkerRepo:
         :param count: величина, на которую прогресс увеличился.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -580,7 +587,7 @@ class WorkerRepo:
         1 работника.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -606,7 +613,7 @@ class WorkerRepo:
                  False - задача в процессе выполнения.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -626,7 +633,7 @@ class WorkerRepo:
         '''
 
         id = None
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -639,7 +646,7 @@ class WorkerRepo:
         return id
 
     def isDone(self, taskId):
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -651,7 +658,7 @@ class WorkerRepo:
             return [status, float(count)]
 
     def isRun(self, workerId):
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -675,7 +682,7 @@ class BlockerRepo:
                  False, если нельзя.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -695,7 +702,7 @@ class BlockerRepo:
         Добавляет запущенного работника.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -714,7 +721,7 @@ class BlockerRepo:
         Удаляет запущенного рабоника.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -739,7 +746,7 @@ class ServiceRepo:
         :return: новый идентификатор.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
 
         with conn.cursor() as cursor:
             conn.autocommit = True
@@ -759,7 +766,7 @@ class ServiceRepo:
         :return: идентификатор сервиса.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -783,7 +790,7 @@ class ServiceRepo:
         :return: лист с идентификаторами сервисов.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
@@ -808,7 +815,7 @@ class ServiceRepo:
 
         service_id = self.getServiceId()
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
             page = self.getNewIndexPage()
@@ -827,7 +834,7 @@ class ServiceRepo:
         :param tasks: массив задач.
         '''
 
-        conn = getConnection()
+        conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
             page = self.getNewIndexPage()

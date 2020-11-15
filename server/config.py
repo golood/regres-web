@@ -1,34 +1,36 @@
 import os
 
-postgres_db = os.environ.get('POSTGRES_DB')
-postgres_user = os.environ.get('POSTGRES_USER')
-postgres_password = os.environ.get('POSTGRES_PASSWORD')
-postgres_host = os.environ.get('POSTGRES_HOST')
-postgres_port = '5432'
+POSTGRES_DB = os.environ.get('POSTGRES_DB')
+POSTGRES_USER = os.environ.get('POSTGRES_USER')
+POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
+POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT')
 
-secret_key = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
-redis_host = os.environ.get('REDIS_HOST')
-redis_port = os.environ.get("REDIS_PORT")
+REDIS_HOST = os.environ.get('REDIS_HOST')
+REDIS_PORT = os.environ.get("REDIS_PORT")
 
-url_worker = os.environ.get("URL_WORKER")
-worker_thread = os.environ.get("WORKER_THREAD")
-count_package = os.environ.get("COUNT_PACKAGE")
+URL_WORKER = os.environ.get("URL_WORKER")
+WORKER_THREAD = os.environ.get("WORKER_THREAD")
+COUNT_PACKAGE = os.environ.get("COUNT_PACKAGE")
 
 UPLOAD_FOLDER = '/tmp'
 
-# postgres_db = 'regres'
-# postgres_user = 'web'
-# postgres_password = 'web'
-# postgres_host = 'localhost'
-# postgres_port = '5432'
+SPACE = os.environ.get("SPACE")
+
+# POSTGRES_DB = 'regres'
+# POSTGRES_USER = 'web'
+# POSTGRES_PASSWORD = 'web'
+# POSTGRES_HOST = 'localhost'
 #
-# secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+# SECRET_KEY = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 #
-# redis_host = 'localhost'
-# redis_port = '6379'
+# REDIS_HOST = 'localhost'
+# REDIS_PORT = '6379'
 #
-# url_worker = 'http://localhost:5001/api'
+# URL_WORKER = 'http://localhost:5001/api'
 #
-# worker_thread = '1'
-# count_package = '500'
+# WORKER_THREAD = '1'
+# COUNT_PACKAGE = '500'
+# SPACE = 'dev'

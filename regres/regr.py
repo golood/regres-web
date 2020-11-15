@@ -1,24 +1,27 @@
-import datetime
 import json
-import numpy as np
-from functools import reduce
-import regres.rrrr as rrr
-import sys
 import math
-from itertools import combinations
+import sys
 import threading
-from server.db import ResultRepo, WorkerRepo, ServiceRepo
 import time
-import requests
-import redis
-import server.config as config
+from functools import reduce
+from itertools import combinations
 from queue import Queue
 
+import numpy as np
+import redis
+import requests
+
+import regres.rrrr as rrr
+import server.config as config
+from server.db import ResultRepo, WorkerRepo
+from server.logger import logger
+
+log = logger.get_logger('server')
 sys.setrecursionlimit(1000000000)
 
 red = redis.Redis(
-    host=config.redis_host,
-    port=config.redis_port,
+    host=config.REDIS_HOST,
+    port=config.REDIS_PORT,
     decode_responses=True)
 
 threadLock = threading.Lock()
@@ -63,59 +66,60 @@ class Method:
 
         return A
 
-    def epselon(self, alfa):
+    def epsilon(self, alfa):
         return list(
             map(lambda x, y: y - x, self._y(alfa), self.y))
 
-    def Epselon(self, alfa):
-        mod = lambda x: x if (x > 0) else x * -1
-
-        E = 1 / len(self.y) * reduce(
+    def epsilon_e(self, alfa):
+        e = 1 / len(self.y) * reduce(
             lambda x, y: x + y,
-            list(map(lambda x, y: mod((y - x) / y),
+            list(map(lambda x, y: math.fabs((y - x) / y),
                      self._y(alfa), self.y))) * 100
 
-        return E
+        return e
 
     def calculation_m(self):
-        '''
+        """
         Расчет суммы модулей ошибок.
-        '''
+        """
 
         for item in self.eps:
             self.M += abs(item)
 
     def calculation_k(self):
-        '''
+        """
         Расчет суммы квадратов ошибок.
-        '''
+        """
 
         for item in self.eps:
             self.K += item**2
 
     def calculation_o(self):
-        '''
+        """
         Поиск максимольной по модулю ошибки.
-        '''
+        """
 
         self.O = max(list(map(lambda x: abs(x), self.eps)))
 
-    def getResaul(self):
+    def get_result(self):
         return self.a, self.eps, [self.e, self.M, self.K, self.O]
 
-    def getSmeshenir(self):
-        sum = 0
+    def get_bias_estimate(self):
+        """
+        Получает оценку смещения.
+        """
+        amount = 0
         m = len(self.x)
         try:
-          for item in self.x:
-            x = math.fsum(item) / len(item)
-            sum += math.fabs((self._minusAlfa() * x) / (self.a[0] * x)) / m
+            for item in self.x:
+                x = math.fsum(item) / len(item)
+                amount += math.fabs((self._minus_alfa() * x) / (self.a[0] * x)) / m
 
-          return sum * 100
+            return amount * 100
         except ZeroDivisionError:
-          return 'Infinity'
+            return 'Infinity'
 
-    def _minusAlfa(self):
+    def _minus_alfa(self):
         a = self.a[0]
         for i in range(1, len(self.a)):
             a -= self.a[i]
@@ -138,16 +142,16 @@ class MNK(Method):
         a = self.find_a()
         for item in a:
             self.a.append(item)
-        eps = self.epselon(self.a)
+        eps = self.epsilon(self.a)
         for item in eps:
             self.eps.append(item)
-        self.e = self.Epselon(self.a)
+        self.e = self.epsilon_e(self.a)
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
 
-    def getResaul(self):
-        return 'МНК', super().getResaul()
+    def get_result(self):
+        return 'МНК', super().get_result()
 
 
 class MNM(Method):
@@ -162,13 +166,13 @@ class MNM(Method):
         task = rrr.LpSolve_MNM(self.x, self.y)
         task.run()
         self.a, self.eps = task.getResault()
-        self.e = self.Epselon(self.a)
+        self.e = self.epsilon_e(self.a)
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
 
-    def getResaul(self):
-        return 'МНМ', super().getResaul()
+    def get_result(self):
+        return 'МНМ', super().get_result()
 
 
 class MAO(Method):
@@ -183,13 +187,13 @@ class MAO(Method):
         task = rrr.LpSolve_MAO(self.x, self.y)
         task.run()
         self.a, self.eps = task.getResault()
-        self.e = self.Epselon(self.a)
+        self.e = self.epsilon_e(self.a)
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
 
-    def getResaul(self):
-        return 'МАО', super().getResaul()
+    def get_result(self):
+        return 'МАО', super().get_result()
 
 
 class MCO(Method):
@@ -206,57 +210,40 @@ class MCO(Method):
         task = rrr.LpSolve_MCO(self.x, self.y, self.h1, self.h2)
         task.run()
         self.a, self.eps = task.getResault()
-        self.e = self.Epselon(self.a)
+        self.e = self.epsilon_e(self.a)
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
 
-    def getResaul(self):
-        return 'МСО', super().getResaul()
+    def get_result(self):
+        return 'МСО', super().get_result()
 
 
 class Task:
 
     def __init__(self, tasks, x, y, h1=None, h2=None):
         self.methods = []
-        if (tasks[0]):
-          self.methods.append(MNK(x, y))
-        if (tasks[1]):
-          self.methods.append(MNM(x, y))
-        if (tasks[2]):
-          self.methods.append(MAO(x, y))
-        if (tasks[3]):
-          self.methods.append(MCO(x, y, h1, h2))
+        if tasks[0]:
+            self.methods.append(MNK(x, y))
+        if tasks[1]:
+            self.methods.append(MNM(x, y))
+        if tasks[2]:
+            self.methods.append(MAO(x, y))
+        if tasks[3]:
+            self.methods.append(MCO(x, y, h1, h2))
 
     def run(self):
 
         for item in self.methods:
             item.run()
 
-    def getResaults(self):
-        resaults = []
+    def get_results(self):
+        results = []
 
         for item in self.methods:
-            resaults.append(item.getResaul())
+            results.append(item.get_result())
 
-        return resaults
-
-
-class TaskMCO:
-
-    def __init__(self, x, y, h1=None, h2=None):
-        self.method = MCO(x, y, h1, h2)
-
-    def run(self):
-        self.method.run()
-
-    def getResaults(self):
-        resaults = [self.method.getResaul(),
-                    self.method.getSmeshenir(),
-                    self.method.h1,
-                    self.method.h2]
-
-        return resaults
+        return results
 
 
 class RequestWorker(threading.Thread):
@@ -278,11 +265,14 @@ class RequestWorker(threading.Thread):
             data = self.send_request(index)
 
             threadLock.acquire()
-            ResultRepo().addResults(data['answer'], self.task_id, self.percent)
+            if data is not None:
+                ResultRepo().addResults(data['answer'], self.task_id,
+                                        self.percent)
             threadLock.release()
             self.queue.task_done()
 
-            print((time.time() - start))
+            log.debug('Complete package: {0}, taskId: {1}, lead time: {2}'
+                      .format(index, self.task_id, time.time() - start))
 
     def send_request(self, index):
         data = {'index': index,
@@ -290,41 +280,53 @@ class RequestWorker(threading.Thread):
                 'y': self.y,
                 'list_h': red.get(index)}
 
-        response = requests.post(config.url_worker, json=data)
+        try:
+            response = requests.post(config.URL_WORKER, json=data)
 
-        return json.loads(response.content.decode('utf-8'))
+            if response.status_code >= 400:
+                log.error('Exception request to worker: {0}'
+                          .format(response.content.decode('utf-8')))
+            else:
+                return json.loads(response.content.decode('utf-8'))
+        except Exception as e:
+            log.error('Exception request to worker', exc_info=True,
+                      stack_info=True)
+
+        return None
 
 
 class TaskPerebor:
-    '''
+    """
     Класс задачи для решения задачи поиска критерия смещения, перебором
     комбинаций подматриц Н1, Н2.
-    '''
+    """
 
-    def __init__(self, x, y, massiv):
+    def __init__(self, x, y, indices_x):
+        self.percent = 100
         self.x = x
         self.y = y
         red.mset({'x': json.dumps(x)})
         red.mset({'y': json.dumps(y)})
-        self.massiv = massiv
+        self.indices_x = indices_x
         self.tasks = []
         self.index = []
-        self.task_id = ResultRepo().createTask()
+        self.task_id = ResultRepo().create_task()
 
     def run(self):
-        self.getAllComb()
+        self.get_all_combinations()
 
     def create_task_package(self):
-        '''
+        """
         Собирает в пакет набор задач.
-        '''
+        """
 
         queue = Queue()
         percent = float('{:.3f}'.format(self.percent))
-        for i in range(int(config.worker_thread)):
+        for i in range(int(config.WORKER_THREAD)):
             t = RequestWorker(queue, i, percent, self.task_id)
             t.setDaemon(True)
             t.start()
+        log.info('Started {0} thread workers'.format(config.WORKER_THREAD))
 
         for i in self.index:
             queue.put(str(i))
@@ -332,27 +334,28 @@ class TaskPerebor:
         queue.join()
         self.tasks = []
 
-    def getAllComb(self):
-        '''
+    def get_all_combinations(self):
+        """
         Перебор всех комбинаций Н1, Н2. Решение задачи методом СМО. Сохранение
         результатов решений в БД. Запись происходит порционно по n решений
         задачи.
-        '''
+        """
 
-        len_x = len(self.massiv)
+        len_x = len(self.indices_x)
         k = len_x // 2
-        size = math.factorial(len_x) / (math.factorial(len_x - k) * math.factorial(k))
-        step = int(config.count_package)
+        size = (math.factorial(len_x)
+                / (math.factorial(len_x - k) * math.factorial(k)))
+        step = int(config.COUNT_PACKAGE)
 
-        self.percent = step / (size / 100)
-        if self.percent >= 100:
-            self.percent = 100
+        percent = step / (size / 100)
+        if percent < 100:
+            self.percent = percent
 
         counter = 0
         i = 0
-        for h1 in combinations(self.massiv, k):
+        for h1 in combinations(self.indices_x, k):
             counter += 1
-            h2 = tuple(filter(lambda x: (x not in h1), self.massiv))
+            h2 = tuple(filter(lambda x: (x not in h1), self.indices_x))
 
             self.tasks.append({'h1': h1, 'h2': h2})
 
@@ -371,9 +374,9 @@ class TaskPerebor:
         self.create_task_package()
 
         while True:
-            repoWorker = WorkerRepo()
-            if repoWorker.isComplete(self.task_id):
-                repoWorker.complete(self.task_id)
+            repo_worker = WorkerRepo()
+            if repo_worker.isComplete(self.task_id):
+                repo_worker.complete(self.task_id)
                 break
             time.sleep(2)
 
@@ -384,13 +387,13 @@ class TaskPerebor:
         red.delete('x')
         red.delete('y')
 
-    def getResult(self):
-        resaults = []
+    def get_result(self):
+        results = []
 
         for task in self.tasks:
-            resaults.append(task.getResaults())
+            results.append(task.get_results())
 
-        return resaults
+        return results
 
     class TaskDTO:
         def __init__(self, x, y, h1, h2):
@@ -400,9 +403,9 @@ class TaskPerebor:
             self.h2 = h2
 
         class DataEncoder(json.JSONEncoder):
-            '''
+            """
             Класс кодирует модель Data в JSON формат.
-            '''
+            """
 
             def default(self, obj):
                 if isinstance(obj, TaskPerebor.TaskDTO):

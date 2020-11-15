@@ -1,8 +1,12 @@
 #!/usr/bin/python3
 import json
 from threading import Thread
+
 from regres.regr import Task, TaskPerebor
 from server import db
+from server.logger import logger
+
+log = logger.get_logger('server')
 
 
 class Data:
@@ -61,9 +65,9 @@ class Data:
                 index += 1
             x.append(line)
 
-        self.x = self.append_freeChlen(x)
+        self.x = self.append_free_member(x)
 
-    def append_freeChlen(self, x):
+    def append_free_member(self, x):
 
         if self.freeChlen:
             new_x = []
@@ -83,11 +87,11 @@ class Data:
 
         index = 0
         for items in self.x:
-            if (index in h1_index):
+            if index in h1_index:
                 h1.append(items)
                 index += 1
                 continue
-            if (index in h2_index):
+            if index in h2_index:
                 h2.append(items)
                 index += 1
                 continue
@@ -146,77 +150,61 @@ class Test:
     def _run(self):
         self.tasks.run()
 
-    def getResaults(self):
-        return self.tasks.getResaults()
+    def get_results(self):
+        return self.tasks.get_results()
 
 
-class WorkerTaskPerebor(Thread):
+class WorkerTask(Thread):
     """
     Поток для решения задачи вычисления критерия смещения.
     """
 
-    def __init__(self, userId=None, name=None, x=None, y=None):
+    def __init__(self, user_id=None, name=None, x=None, y=None):
         """Инициализация потока"""
         Thread.__init__(self)
-        self.__createWorker(userId)
+        self.__create_worker(user_id)
         self.name = name
         self.x = x
         self.y = y
-        self.massiv = self._initList(len(x))
-        self.task = TaskPerebor(x=self.x, y=self.y, massiv=self.massiv)
+        self.indices_x = self._init_list(len(x))
+        self.task = TaskPerebor(x=self.x, y=self.y, indices_x=self.indices_x)
         self.task_id = self.task.task_id
-        self.__buildWorker()
+        self.__build_worker()
+        log.info('Create task name: {0}, id: {1}, userId: {2}'
+                 .format(name, self.task_id, user_id))
 
     def run(self):
         """Запуск потока"""
         repo = db.WorkerRepo()
         if repo.runWorker(self.id):
+            log.info('The task ({0}) start, workerId: {1}'
+                     .format(self.task_id, self.id))
             self.task.run()
+        else:
+            log.error('The task ({0}) did not start'.format(self.task_id))
 
-    def _initList(self, len):
+    @staticmethod
+    def _init_list(len_x):
         m = []
-        for item in range(len):
+        for item in range(len_x):
             m.append(item)
 
         return m
 
-    def __createWorker(self, userId):
-        '''
+    def __create_worker(self, user_id):
+        """
         Создаёт в БД нового работника. Получает идентификатор работника.
-        :param userId: идентификатор пользователя.
-        '''
+        :param user_id: идентификатор пользователя.
+        """
 
         repo = db.WorkerRepo()
-        self.id = repo.createNewWorker(userId)
+        self.id = repo.createNewWorker(user_id)
 
-    def __buildWorker(self):
-        '''
+    def __build_worker(self):
+        """
         Собирает работника. Получает задачу для работника. Привязывает её к
         себе в БД.
-        '''
+        """
 
         repo = db.WorkerRepo()
         repo.buildWorker(self.id, self.name, self.task_id)
-
-
-class TestT:
-
-    def __init__(self, x=None, y=None):
-        self._build(x, y)
-        self._run()
-
-    def _build(self, x, y):
-        self.tasks = TaskPerebor(x=x, y=y, massiv=self._initList(len(x)))
-
-    def _initList(self, len):
-        m = []
-        for item in range(len):
-            m.append(item)
-
-        return m
-
-    def _run(self):
-        self.tasks.run()
-
-    def getResaults(self):
-        return self.tasks.getResult()
