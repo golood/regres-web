@@ -255,46 +255,71 @@ class RequestWorker(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = counter
         self.queue = queue
-        self.x = red.get('x')
-        self.y = red.get('y')
+        self.look = False
+        self.index = None
+
+        try:
+            self.x = red.get('x')
+            self.y = red.get('y')
+        except redis.exceptions.ConnectionError as e:
+            log.error('Error connection to Redis: {}'.format(e))
+
         self.percent = percent
         self.task_id = task_id
 
     def run(self):
         while True:
             start = time.time()
-            index = self.queue.get()
-            data = self.send_request(index)
 
-            threadLock.acquire()
-            if data is not None:
-                ResultRepo().add_results(data['answer'], self.task_id,
-                                         self.percent)
-            threadLock.release()
-            self.queue.task_done()
+            if self.look:
+                data = self.send_request(self.index)
+            else:
+                self.index = self.queue.get()
+                data = self.send_request(self.index)
+
+            if data is None:
+                self.look = True
+                time.sleep(5)
+                continue
+            self.look = False
+
+            self.save_request(data)
 
             log.debug('Complete package: {0}, taskId: {1}, lead time: {2}'
-                      .format(index, self.task_id, time.time() - start))
+                      .format(self.index, self.task_id, time.time() - start))
+
+    def save_request(self, data):
+        threadLock.acquire()
+        ResultRepo().add_results(data['answer'], self.task_id, self.percent)
+        threadLock.release()
+
+        self.queue.task_done()
 
     def send_request(self, index):
-        data = {'index': index,
-                'x': self.x,
-                'y': self.y,
-                'list_h': red.get(index)}
+        try:
+            data = {'index': index,
+                    'x': self.x,
+                    'y': self.y,
+                    'list_h': red.get(index)}
+        except redis.exceptions.ConnectionError as e:
+            log.error('Error connection to Redis: {}'.format(e))
+            return None
 
         try:
-            response = requests.post(config.URL_WORKER, json=data)
+            response = requests.post(config.URL_WORKER, json=data, timeout=20)
 
             if response.status_code >= 400:
                 log.error('Exception request to worker: {0}'
                           .format(response.content.decode('utf-8')))
+                return None
             else:
                 return json.loads(response.content.decode('utf-8'))
-        except Exception as e:
-            log.error('Exception request to worker', exc_info=True,
-                      stack_info=True)
-
-        return None
+        except requests.exceptions.Timeout:
+            log.error('Exception Timeout by request to worker: {}')
+            return None
+        except requests.exceptions.RequestException as e:
+            log.error('Exception request to worker: {}'.format(e), exc_info=True, stack_info=True)
+            return None
 
 
 class TaskBiasEstimates:
@@ -307,8 +332,13 @@ class TaskBiasEstimates:
         self.percent = 100
         self.x = x
         self.y = y
-        red.mset({'x': json.dumps(x)})
-        red.mset({'y': json.dumps(y)})
+
+        try:
+            red.mset({'x': json.dumps(x)})
+            red.mset({'y': json.dumps(y)})
+        except redis.exceptions.ConnectionError as e:
+            log.error('Error connection to Redis: {}'.format(e))
+
         self.indices_x = indices_x
         self.tasks = []
         self.index = []
@@ -328,13 +358,14 @@ class TaskBiasEstimates:
             t = RequestWorker(queue, i, percent, self.task_id)
             t.setDaemon(True)
             t.start()
-        log.info('Started {0} thread workers'.format(config.WORKER_THREAD))
+        log.info('Started {} thread workers'.format(config.WORKER_THREAD))
 
         for i in self.index:
             queue.put(str(i))
 
         queue.join()
         self.tasks = []
+        log.info('Workers finished the task: {}'.format(self.task_id))
 
     def get_all_combinations(self):
         """
@@ -352,6 +383,7 @@ class TaskBiasEstimates:
         percent = step / (size / 100)
         if percent < 100:
             self.percent = percent
+        log.info('Number of tasks for a worker: {0}, number of packages: {1}'.format(size, size // step))
 
         counter = 0
         i = 0
@@ -363,14 +395,24 @@ class TaskBiasEstimates:
 
             if counter % step == 0:
                 self.index.append(i)
-                red.mset({str(i): json.dumps(self.tasks)})
+
+                try:
+                    red.mset({str(i): json.dumps(self.tasks)})
+                except redis.exceptions.ConnectionError as e:
+                    log.error('Error connection to Redis: {}'.format(e))
+
                 i += 1
                 counter = 0
                 self.tasks = []
 
         if counter != 0:
             self.index.append(i)
-            red.mset({str(i): json.dumps(self.tasks)})
+
+            try:
+                red.mset({str(i): json.dumps(self.tasks)})
+            except redis.exceptions.ConnectionError as e:
+                log.error('Error connection to Redis: {}'.format(e))
+
             self.tasks = []
 
         self.create_task_package()
@@ -382,11 +424,14 @@ class TaskBiasEstimates:
             time.sleep(2)
 
     def clear_redis_data(self):
-        for i in self.index:
-            red.delete(str(i))
+        try:
+            for i in self.index:
+                red.delete(str(i))
 
-        red.delete('x')
-        red.delete('y')
+            red.delete('x')
+            red.delete('y')
+        except redis.exceptions.ConnectionError as e:
+            log.error('Error connection to Redis: {}'.format(e))
 
     def get_result(self):
         results = []
@@ -412,21 +457,3 @@ class TaskBiasEstimates:
                 if isinstance(obj, TaskBiasEstimates.TaskDTO):
                     return obj.__dict__
                 return json.JSONEncoder.default(self, obj)
-
-    class MyThread(threading.Thread):
-        def __init__(self, queue):
-            """Инициализация потока"""
-            threading.Thread.__init__(self)
-            self.queue = queue
-
-        def run(self):
-            """Запуск потока"""
-            while True:
-                # Получаем задачу ЛП из очереди
-                task = self.queue.get()
-
-                # Решаем задачу
-                task.run()
-
-                # Отправляем сигнал о том, что задача завершена
-                self.queue.task_done()

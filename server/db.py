@@ -19,7 +19,8 @@ def get_connection():
                             user=config.POSTGRES_USER,
                             password=config.POSTGRES_PASSWORD,
                             host=config.POSTGRES_HOST,
-                            port=config.POSTGRES_PORT)
+                            port=config.POSTGRES_PORT,
+                            async_=True)
     return conn
 
 
@@ -52,6 +53,7 @@ class UserSessionRepo:
 
             answer = cursor.fetchone()[0]
 
+        conn.close()
         return answer
 
     @staticmethod
@@ -101,6 +103,7 @@ class LoadFilesRepo:
 
             answer = cursor.fetchone()[0]
 
+        conn.close()
         return answer
 
 
@@ -127,6 +130,7 @@ class MatrixRepo:
 
             answer = cursor.fetchone()[0]
 
+        conn.close()
         return answer
 
     def add_matrix(self, matrix):
@@ -155,6 +159,7 @@ class MatrixRepo:
 
             execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
 
+        conn.close()
         return matrix_id
 
     @staticmethod
@@ -188,6 +193,7 @@ class MatrixRepo:
                     line = [util.format_number(row[2])]
             matrix.append(line)
 
+        conn.close()
         return matrix
 
     def set_row(self, row):
@@ -213,6 +219,7 @@ class MatrixRepo:
 
             execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
 
+        conn.close()
         return row_id
 
     @staticmethod
@@ -237,6 +244,7 @@ class MatrixRepo:
             for row in rows:
                 line.append(util.format_number(row[2]))
 
+        conn.close()
         return line
 
 
@@ -263,6 +271,7 @@ class ResultRepo:
 
             result_id = cursor.fetchone()[0]
 
+        conn.close()
         return result_id
 
     @staticmethod
@@ -290,6 +299,7 @@ class ResultRepo:
 
             cursor.execute(insert, values)
 
+        conn.close()
         return cursor.fetchone()[0]
 
     @staticmethod
@@ -317,6 +327,7 @@ class ResultRepo:
 
             id_res = execute_values(cur=cursor, sql=insert, argslist=values, fetch=True, page_size=200)
 
+        conn.close()
         return id_res
 
     @staticmethod
@@ -340,6 +351,7 @@ class ResultRepo:
             insert = 'INSERT INTO tasks (id, type) VALUES (%s, %s)'
             cursor.execute(insert, (task_id, type_task))
 
+        conn.close()
         return task_id
 
     @staticmethod
@@ -361,6 +373,7 @@ class ResultRepo:
                 values.append((id_task, item,))
 
             execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
+        conn.close()
 
     def add_results(self, data, id_task=None, percent=0):
         """
@@ -404,6 +417,7 @@ class ResultRepo:
             for row in rows:
                 line.append(row)
 
+        conn.close()
         return line
 
     @staticmethod
@@ -455,6 +469,7 @@ class ResultRepo:
             for row in rows:
                 line.append(row)
 
+        conn.close()
         return line
 
 
@@ -486,6 +501,7 @@ class WorkerRepo:
 
             worker_id = cursor.fetchone()[0]
 
+        conn.close()
         return worker_id
 
     def create_new_worker(self, user_id):
@@ -507,6 +523,7 @@ class WorkerRepo:
 
             cursor.execute(insert, values)
 
+        conn.close()
         return worker_id
 
     @staticmethod
@@ -527,6 +544,7 @@ class WorkerRepo:
             values = (name, task_id, worker_id,)
 
             cursor.execute(update, values)
+        conn.close()
 
     @staticmethod
     def run_worker(worker_id):
@@ -598,6 +616,7 @@ class WorkerRepo:
 
             cursor.execute(update, values)
 
+        conn.close()
         BlockerRepo.del_run_worker()
 
     @staticmethod
@@ -617,6 +636,7 @@ class WorkerRepo:
             cursor.execute(select, (task_id,))
             count = cursor.fetchone()[0]
 
+        conn.close()
         return int(count) >= 100
 
     @staticmethod
@@ -636,6 +656,7 @@ class WorkerRepo:
             answer = cursor.fetchone()
             task_id = None if answer is None else answer[0]
 
+        conn.close()
         return task_id
 
     @staticmethod
@@ -648,6 +669,7 @@ class WorkerRepo:
             cursor.execute(select, (task_id,))
             status, count = cursor.fetchone()
 
+        conn.close()
         return [status, float(count)]
 
     @staticmethod
@@ -661,6 +683,7 @@ class WorkerRepo:
 
             worker_status = cursor.fetchone()[0] in ('in_progress', 'done')
 
+        conn.close()
         return worker_status
 
 
@@ -687,6 +710,7 @@ class BlockerRepo:
             answer = cursor.fetchone()
             conn.close()
 
+            conn.close()
             if answer:
                 return True
             else:
@@ -710,6 +734,7 @@ class BlockerRepo:
 
             value = (run_worker + 1,)
             cursor.execute(update, value)
+        conn.close()
 
     @staticmethod
     def del_run_worker():
@@ -729,3 +754,4 @@ class BlockerRepo:
 
             value = (run_worker - 1,)
             cursor.execute(update, value)
+        conn.close()

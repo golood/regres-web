@@ -82,8 +82,7 @@ class Data:
 
     def set_h1_h2(self, h1_index=None, h2_index=None):
 
-        h1 = []
-        h2 = []
+        h1, h2 = [], []
 
         index = 0
         for items in self.x:
@@ -141,14 +140,12 @@ class WorkerTask(Thread):
         self.task = TaskBiasEstimates(x=self.x, y=self.y, indices_x=self.indices_x)
         self.task_id = self.task.task_id
         self.__build_worker()
-        log.info('Create task name: {0}, id: {1}, userId: {2}'
-                 .format(name, self.task_id, user_id))
+        log.info('Create task name: {0}, id: {1}, userId: {2}'.format(name, self.task_id, user_id))
 
     def run(self):
         """Запуск потока"""
         if WorkerRepo.run_worker(self.id):
-            log.info('The task ({0}) start, workerId: {1}'
-                     .format(self.task_id, self.id))
+            log.info('The task ({0}) start, workerId: {1}'.format(self.task_id, self.id))
             self.task.run()
         else:
             log.error('The task ({0}) did not start'.format(self.task_id))

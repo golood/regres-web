@@ -91,9 +91,7 @@ class LpSolve:
         self.problem.solve()
 
     def get_result(self):
-        a = []
-        u = []
-        v = []
+        a, u, v = [], [], []
 
         variables = self.problem.variables()
         index = 0
