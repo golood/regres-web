@@ -1,7 +1,9 @@
 import logging
 import logging.config
-import yaml
 from os import path
+
+import yaml
+
 from server.config import SPACE
 
 

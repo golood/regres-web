@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import datetime
 
+import deprecation
 import psycopg2
 from psycopg2.extras import execute_values
 
@@ -265,6 +266,7 @@ class ResultRepo:
         return result_id
 
     @staticmethod
+    @deprecation.deprecated(deprecated_in='1.1.0', removed_in='1.3.0')
     def set_result(result):
         """
         Добавляет результаты вычислений.
@@ -359,33 +361,30 @@ class ResultRepo:
                 values.append((id_task, item,))
 
             execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
-        conn.close()
 
-    def addResults(self, data, id_task=None, percent=0):
-        '''
+    def add_results(self, data, id_task=None, percent=0):
+        """
         Добавляет к задаче новые результаты вычислений.
         :param data: результаты вычислений.
         :param id_task: идентификатор задачи.
         :param percent: величина, на которую продвинулось решение заачи.
-        '''
+        """
 
-        repoWorker = WorkerRepo()
-
-        if id_task == None:
+        if id_task is None:
             id_task = self.create_task()
-
 
         id_res = self.set_results(data)
         self.add_tasks_to_result(id_task, id_res)
-        repoWorker.updateCount(id_task, percent)
+        WorkerRepo.update_count(id_task, percent)
 
-
-    def getTask(self, id):
-        '''
+    @staticmethod
+    @deprecation.deprecated(deprecated_in='1.1.0', removed_in='1.3.0')
+    def get_task(task_id):
+        """
         Получает результаты вычислений в задаче.
-        :param id: идентификатор задачи.
+        :param task_id: идентификатор задачи.
         :return: массив с результатами вычислений.
-        '''
+        """
 
         conn = get_connection()
 
@@ -397,7 +396,7 @@ class ResultRepo:
                           JOIN tasks_to_resalt ttr on t.id = ttr.id_tasks
                           JOIN result r on ttr.id_result = r.id
                         WHERE t.id = %s'''
-            cursor.execute(select, (id,))
+            cursor.execute(select, (task_id,))
 
             rows = cursor.fetchall()
 
@@ -405,37 +404,37 @@ class ResultRepo:
             for row in rows:
                 line.append(row)
 
-        conn.close()
         return line
 
-    def getTaskByBestBiasEstimates(self, id, filterId, sotringId):
-        '''
+    @staticmethod
+    def get_task_by_best_bias_estimates(task_id, filter_id, sorting_id):
+        """
         Получает результаты вычислений в задаче.
-        :param id: идентификатор задачи.
-        :param filterId: идентификатор фильтра.
-        :param sotringId: идентификатор сортировки.
+        :param task_id: идентификатор задачи.
+        :param filter_id: идентификатор фильтра.
+        :param sorting_id: идентификатор сортировки.
         :return: массив с результатами вычислений.
-        '''
+        """
 
         filter_p = ' LIMIT 20'
         sorting_p = ' ORDER BY r.bias_estimates::numeric '
 
-        if filterId == 0:
+        if filter_id == 0:
             filter_p = ' LIMIT 20'
-        elif filterId == 1:
+        elif filter_id == 1:
             filter_p = ' LIMIT 40'
-        elif filterId == 2:
+        elif filter_id == 2:
             filter_p = ' LIMIT 100'
-        elif filterId == 3:
+        elif filter_id == 3:
             filter_p = ' LIMIT 1000'
 
-        if sotringId == 0:
+        if sorting_id == 0:
             sorting_p = ' ORDER BY r.bias_estimates::numeric DESC '
-        elif sotringId == 1:
+        elif sorting_id == 1:
             sorting_p = ' ORDER BY r.bias_estimates::numeric '
-        elif sotringId == 2:
+        elif sorting_id == 2:
             sorting_p = ' ORDER BY r.e::numeric DESC '
-        elif sotringId == 3:
+        elif sorting_id == 3:
             sorting_p = ' ORDER BY r.e::numeric '
 
         conn = get_connection()
@@ -448,7 +447,7 @@ class ResultRepo:
                           JOIN tasks_to_resalt ttr on t.id = ttr.id_tasks
                           JOIN result r on ttr.id_result = r.id
                         WHERE t.id = %s''' + sorting_p + filter_p
-            cursor.execute(select, (id,))
+            cursor.execute(select, (task_id,))
 
             rows = cursor.fetchall()
 
@@ -456,25 +455,25 @@ class ResultRepo:
             for row in rows:
                 line.append(row)
 
-        conn.close()
         return line
 
 
 class WorkerRepo:
-    '''
+    """
     Репозитория для работы с данными работника.
     Работник имеет следующие статусы:
         # build - формирование задачи.
         # in_progress - задача в процессе выполнения.
         # done - задача выполнена.
         # wait - задача стоит в очереди на выполнение.
-    '''
+    """
 
-    def getNewIndex(self):
-        '''
+    @staticmethod
+    def get_new_index():
+        """
         Получает новый идентификатор.
         :return: новый идентификатор.
-        '''
+        """
 
         conn = get_connection()
 
@@ -485,20 +484,18 @@ class WorkerRepo:
 
             cursor.execute(select)
 
-            id = cursor.fetchone()[0]
+            worker_id = cursor.fetchone()[0]
 
-        conn.close()
-        return id
+        return worker_id
 
-    def createNewWorker(self, userId):
-        '''
+    def create_new_worker(self, user_id):
+        """
         Создаёт нового работника.
-        :param userId: идентификатор пользователя.
-        :param name: имя нового работника.
+        :param user_id: идентификатор пользователя.
         :return: идентификатор работника.
-        '''
+        """
 
-        id = self.getNewIndex()
+        worker_id = self.get_new_index()
 
         conn = get_connection()
         with conn.cursor() as cursor:
@@ -506,20 +503,20 @@ class WorkerRepo:
 
             insert = 'INSERT INTO worker (id, status, user_id, count) VALUES (%s, %s, %s, %s)'
 
-            values = (id, 'build', userId, 0)
+            values = (worker_id, 'build', user_id, 0)
 
             cursor.execute(insert, values)
 
-        conn.close()
-        return id
+        return worker_id
 
-    def buildWorker(self, id, name, taskId):
-        '''
+    @staticmethod
+    def build_worker(worker_id, name, task_id):
+        """
         Строит работника, задаёт имя задачи. Привязывает задачу к работнику.
-        :param id: идентификатор работника.
+        :param worker_id: идентификатор работника.
         :param name: имя задачи.
-        :param taskId: идентификатор задачи.
-        '''
+        :param task_id: идентификатор задачи.
+        """
 
         conn = get_connection()
         with conn.cursor() as cursor:
@@ -527,91 +524,89 @@ class WorkerRepo:
 
             update = 'UPDATE worker SET name = %s, task_id = %s WHERE id = %s'
 
-            values = (name, taskId, id,)
+            values = (name, task_id, worker_id,)
 
             cursor.execute(update, values)
-        conn.close()
 
-    def runWorker(self, id):
-        '''
+    @staticmethod
+    def run_worker(worker_id):
+        """
         Запуск работника. В случае успешного запуска метод возвращает True.
-        :param id: идентификатор работника.
+        :param worker_id: идентификатор работника.
         :return: True, если удалось запустить работника.
                  False, если стоит блокировка на запуск работника.
-        '''
+        """
 
-        repoBloker = BlockerRepo()
-
-        if repoBloker.isAllowedRunNewWorker():
+        if BlockerRepo.is_allowed_run_new_worker():
             conn = get_connection()
             with conn.cursor() as cursor:
                 conn.autocommit = True
 
-                dateTime = datetime.datetime.now()
+                date_time = datetime.datetime.now()
                 update = "UPDATE worker SET status = 'in_progress', count = 0, time_start = %s WHERE id = %s"
 
-                values = (dateTime, id,)
+                values = (date_time, worker_id,)
                 cursor.execute(update, values)
-                repoBloker.addRunWorker()
+                BlockerRepo.add_run_worker()
 
             conn.close()
             return True
         else:
             return False
 
-    def updateCount(self, taskId, count):
-        '''
+    @staticmethod
+    def update_count(task_id, count):
+        """
         Обновляет прогресс выполнения работника.
-        :param taskId: идентификатор задачи.
+        :param task_id: идентификатор задачи.
         :param count: величина, на которую прогресс увеличился.
-        '''
+        """
 
         conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
             select = 'SELECT count FROM worker WHERE task_id = %s'
-            cursor.execute(select, (taskId,))
+            cursor.execute(select, (task_id,))
             count_db = cursor.fetchone()[0]
 
             update = 'UPDATE worker SET count = %s WHERE task_id = %s'
 
-            values = (float(count_db) + count, taskId)
+            values = (float(count_db) + count, task_id)
 
             cursor.execute(update, values)
         conn.close()
 
-    def complete(self, taskId):
-        '''
-        Помечает, что работник завершил работу. Снимает блокировку на
-        1 работника.
-        '''
+    @staticmethod
+    def complete(task_id):
+        """
+        Помечает, что работник завершил работу. Снимает блокировку на 1 работника.
+        """
 
         conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
             select = 'SELECT id FROM worker WHERE task_id = %s'
-            cursor.execute(select, (taskId,))
-            id = cursor.fetchone()[0]
+            cursor.execute(select, (task_id,))
+            worker_id = cursor.fetchone()[0]
 
-            dateTime = datetime.datetime.now()
+            date_time = datetime.datetime.now()
             update = 'UPDATE worker SET count = %s, status = %s, time_end = %s WHERE id = %s'
 
-            values = (100, 'done', dateTime, id,)
+            values = (100, 'done', date_time, worker_id,)
 
             cursor.execute(update, values)
 
-        repo = BlockerRepo()
-        repo.delRunWorker()
-        conn.close()
+        BlockerRepo.del_run_worker()
 
-    def isComplete(self, taskId):
-        '''
+    @staticmethod
+    def is_complete(task_id):
+        """
         Проверяет, выполнилась ли задача.
         :return: True -задача выполнена
                  False - задача в процессе выполнения.
-        '''
+        """
 
         conn = get_connection()
         with conn.cursor() as cursor:
@@ -619,68 +614,68 @@ class WorkerRepo:
 
             select = 'SELECT count FROM worker WHERE task_id = %s'
 
-            cursor.execute(select, (taskId,))
+            cursor.execute(select, (task_id,))
             count = cursor.fetchone()[0]
 
-        conn.close()
         return int(count) >= 100
 
-    def getTaskInLastWorkerByUser(self, userId):
-        '''
+    @staticmethod
+    def get_task_in_last_worker_by_user(user_id):
+        """
         Получает идентификатор задачи для последнего работника пользователя.
-        :param userId: идентификатор пользователя.
+        :param user_id: идентификатор пользователя.
         :return: идентификатор задачи.
-        '''
+        """
 
-        id = None
         conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
             select = "SELECT task_id FROM worker WHERE user_id = %s ORDER BY id DESC LIMIT 1"
-            cursor.execute(select, (userId,))
+            cursor.execute(select, (user_id,))
             answer = cursor.fetchone()
-            id = None if answer is None else answer[0]
+            task_id = None if answer is None else answer[0]
 
-        conn.close()
-        return id
+        return task_id
 
-    def isDone(self, taskId):
+    @staticmethod
+    def is_done(task_id):
         conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
             select = "SELECT status, count FROM worker WHERE task_id = %s"
-            cursor.execute(select, (taskId,))
+            cursor.execute(select, (task_id,))
             status, count = cursor.fetchone()
 
-            conn.close()
-            return [status, float(count)]
+        return [status, float(count)]
 
-    def isRun(self, workerId):
+    @staticmethod
+    def is_run(worker_id):
         conn = get_connection()
         with conn.cursor() as cursor:
             conn.autocommit = True
 
             select = "SELECT status FROM worker WHERE id = %s"
-            cursor.execute(select, (workerId,))
+            cursor.execute(select, (worker_id,))
 
-            var = cursor.fetchone()[0] in ('in_progress', 'done')
-            conn.close()
-            return var
+            worker_status = cursor.fetchone()[0] in ('in_progress', 'done')
+
+        return worker_status
 
 
 class BlockerRepo:
-    '''
+    """
     Репозиторий для работы с блокировщиком фоновых задач.
-    '''
+    """
 
-    def isAllowedRunNewWorker(self):
-        '''
+    @staticmethod
+    def is_allowed_run_new_worker():
+        """
         Проверяет возможность запустить работника.
         :return: True, если можно запустить,
                  False, если нельзя.
-        '''
+        """
 
         conn = get_connection()
         with conn.cursor() as cursor:
@@ -697,10 +692,11 @@ class BlockerRepo:
             else:
                 return False
 
-    def addRunWorker(self):
-        '''
+    @staticmethod
+    def add_run_worker():
+        """
         Добавляет запущенного работника.
-        '''
+        """
 
         conn = get_connection()
         with conn.cursor() as cursor:
@@ -714,12 +710,12 @@ class BlockerRepo:
 
             value = (run_worker + 1,)
             cursor.execute(update, value)
-            conn.close()
 
-    def delRunWorker(self):
-        '''
+    @staticmethod
+    def del_run_worker():
+        """
         Удаляет запущенного рабоника.
-        '''
+        """
 
         conn = get_connection()
         with conn.cursor() as cursor:
@@ -733,116 +729,3 @@ class BlockerRepo:
 
             value = (run_worker - 1,)
             cursor.execute(update, value)
-            conn.close()
-
-class ServiceRepo:
-    '''
-    Репозиторий для работы с сервисами решения регерессионных уравнений.
-    '''
-
-    def getNewIndexPage(self):
-        '''
-        Получает новый идентификатор пачки задач.
-        :return: новый идентификатор.
-        '''
-
-        conn = get_connection()
-
-        with conn.cursor() as cursor:
-            conn.autocommit = True
-
-            select = "select nextval('page_id_seq')"
-
-            cursor.execute(select)
-
-            id = cursor.fetchone()[0]
-
-        conn.close()
-        return id
-
-    def getServiceId(self):
-        '''
-        Получает идентификатор запущенного сервиса с самой короткой очередью запланированных задач.
-        :return: идентификатор сервиса.
-        '''
-
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            conn.autocommit = True
-
-            select = '''SELECT s.id
-                        FROM service_list s
-                          LEFT join queue_task q ON s.id = q.service_id AND q.complete IS FALSE
-                        WHERE s.launch IS TRUE
-                        GROUP BY s.id
-                        ORDER BY count(q.id)
-                        LIMIT 1'''
-
-            cursor.execute(select)
-            id = cursor.fetchone()[0]
-        conn.close()
-
-        return id
-
-    def getRuningServiceIds(self):
-        '''
-        Получает идентификаторы всех запущенных сервисов.
-        :return: лист с идентификаторами сервисов.
-        '''
-
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            conn.autocommit = True
-
-            select = "SELECT id FROM service_list WHERE launch IS TRUE AND (now() AT TIME ZONE 'Asia/Irkutsk' - last_active)::time < '00:00:12'::time"
-
-            cursor.execute(select)
-            rows = cursor.fetchall()
-
-            line = []
-            for row in rows:
-                line.append(row)
-
-        conn.close()
-        return line
-
-
-    def addQueueTaskByBestService(self, tasks, task_id, parcent):
-        '''
-        Добавляет в очередь массив задачь для одного сервиса.
-        :param tasks: массив задач.
-        '''
-
-        service_id = self.getServiceId()
-
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            conn.autocommit = True
-            page = self.getNewIndexPage()
-            insert = 'INSERT INTO queue_task (service_id, complete, task, task_id, parcent, page) VALUES %s'
-
-            values = []
-            for item in tasks:
-                values.append((service_id, False, item, task_id, parcent, page))
-
-            execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
-        conn.close()
-
-    def addQueueTask(self, tasks, task_id, parcent, serviceId):
-        '''
-        Добавляет в очередь массив задачь для одного сервиса.
-        :param tasks: массив задач.
-        '''
-
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            conn.autocommit = True
-            page = self.getNewIndexPage()
-            insert = 'INSERT INTO queue_task (service_id, complete, task, task_id, parcent, page) VALUES %s'
-
-            values = []
-            for item in tasks:
-                values.append((serviceId, False, item, task_id, parcent, page))
-
-            execute_values(cur=cursor, sql=insert, argslist=values, page_size=200)
-        conn.close()

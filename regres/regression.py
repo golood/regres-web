@@ -7,80 +7,90 @@ class LpSolve:
         self.y = y
         self.var = {}
         self.problem = pulp.LpProblem('0', pulp.const.LpMinimize)
-        self._createVariable_A()
-        self._createVariable_U_V()
-        self._createVariable_R()
+        self._create_variable_a()
+        self._create_variable_u_v()
+        self._create_variable_r()
 
-    def _createVariable_A(self):
+    def create_c(self):
+        """
+        Создание целевой функции.
+        """
+        pass
 
+    def build_task_lp(self):
+        """
+        Создание задачи линейного программирования.
+        """
+        pass
+
+    def _create_variable_a(self):
         i = 1
         for _ in self.x[0]:
-            varName = 'a{}{}'.format(str(i), '1')
-            self.var.setdefault(varName, LpVariable(varName, lowBound=0))
-            varName = 'a{}{}'.format(str(i), '2')
-            self.var.setdefault(varName, LpVariable(varName, lowBound=0))
+            var_name = 'a{}{}'.format(str(i), '1')
+            self.var.setdefault(var_name, LpVariable(var_name, lowBound=0))
+            var_name = 'a{}{}'.format(str(i), '2')
+            self.var.setdefault(var_name, LpVariable(var_name, lowBound=0))
             i += 1
 
-    def _createVariable_U_V(self):
+    def _create_variable_u_v(self):
         i = 1
         for _ in self.x:
-            varName_u = 'u{}'.format(str(i))
-            varName_v = 'v{}'.format(str(i))
-            self.var.setdefault(varName_u, LpVariable(varName_u, lowBound=0))
-            self.var.setdefault(varName_v, LpVariable(varName_v, lowBound=0))
+            var_name_u = 'u{}'.format(str(i))
+            var_name_v = 'v{}'.format(str(i))
+            self.var.setdefault(var_name_u, LpVariable(var_name_u, lowBound=0))
+            self.var.setdefault(var_name_v, LpVariable(var_name_v, lowBound=0))
             i += 1
 
-    def _createVariable_R(self):
+    def _create_variable_r(self):
         self.var.setdefault('r', LpVariable('r', lowBound=0))
 
-    def _getAij(self, i, j):
+    def _get_a_by_ij(self, i, j):
         return self.var.get('a{}{}'.format(i, j))
 
-    def _getUi(self, i):
+    def _get_u_by_i(self, i):
         return self.var.get('u{}'.format(i))
 
-    def _getVi(self, i):
+    def _get_v_by_i(self, i):
         return self.var.get('v{}'.format(i))
 
-    def _getR(self):
+    def _get_r(self):
         return self.var.get('r')
 
-    def _createTuples(self, var, cof):
+    @staticmethod
+    def _create_tuples(var, cof):
         return (var, cof)
 
-    def _initList(self, indexLine):
-        myList = []
+    def _init_list(self, index_line):
+        my_list = []
 
         i = 1
-        for item in self.x[indexLine]:
-            myList.append(self._createTuples(self._getAij(i, 1), item))
-            myList.append(self._createTuples(self._getAij(i, 2), -item))
+        for item in self.x[index_line]:
+            my_list.append(self._create_tuples(self._get_a_by_ij(i, 1), item))
+            my_list.append(self._create_tuples(self._get_a_by_ij(i, 2), -item))
             i += 1
 
-        myList.append(self._createTuples(self._getUi(indexLine+1), 1))
-        myList.append(self._createTuples(self._getVi(indexLine+1), -1))
+        my_list.append(self._create_tuples(self._get_u_by_i(index_line + 1), 1))
+        my_list.append(self._create_tuples(self._get_v_by_i(index_line + 1), -1))
 
-        return myList
+        return my_list
 
-    def _initListUV(self, indexLine):
-        myList = []
+    def _init_list_u_v(self, index_line):
+        my_list = [self._create_tuples(self._get_u_by_i(index_line + 1), 1),
+                   self._create_tuples(self._get_v_by_i(index_line + 1), 1),
+                   self._create_tuples(self._get_r(), -1)]
 
-        myList.append(self._createTuples(self._getUi(indexLine+1), 1))
-        myList.append(self._createTuples(self._getVi(indexLine+1), 1))
-        myList.append(self._createTuples(self._getR(), -1))
+        return my_list
 
-        return myList
+    def build_problem_a(self, index_line):
+        self.problem += LpAffineExpression(self._init_list(index_line)) == self.y[index_line], str(index_line + 1)
 
-    def buildProblemA(self, indexLine):
-        self.problem += LpAffineExpression(self._initList(indexLine)) == self.y[indexLine], str(indexLine+1)
-
-    def buildProblemUV(self, indexLine, iter):
-        self.problem += LpAffineExpression(self._initListUV(indexLine)) <= 0, str(iter)
+    def build_problem_u_v(self, index_line, iteration):
+        self.problem += LpAffineExpression(self._init_list_u_v(index_line)) <= 0, str(iteration)
 
     def run(self):
         self.problem.solve()
 
-    def getResault(self):
+    def get_result(self):
         a = []
         u = []
         v = []
@@ -96,7 +106,7 @@ class LpSolve:
                 u.append(variables[index].varValue)
                 index += 1
                 continue
-            if 'v'in variables[index].name:
+            if 'v' in variables[index].name:
                 v.append(variables[index].varValue)
                 index += 1
                 continue
@@ -111,102 +121,99 @@ class LpSolve:
         return a, eps
 
 
-class LpSolve_MNM(LpSolve):
+class LpSolveMNM(LpSolve):
 
     def __init__(self, x, y):
         super().__init__(x, y)
 
-    def createC(self):
-        self.problem += self._getFuncC(self._buildFuncC()), 'Функция цели'
+    def create_c(self):
+        self.problem += self._get_func_c(self._build_func_c()), 'Функция цели'
 
-    def _buildFuncC(self):
+    def _build_func_c(self):
         params = []
 
         for index in range(1, len(self.x)+1):
-            params.append(self._createTuples(self._getUi(index), 1))
-            params.append(self._createTuples(self._getVi(index), 1))
+            params.append(self._create_tuples(self._get_u_by_i(index), 1))
+            params.append(self._create_tuples(self._get_v_by_i(index), 1))
 
         return params
 
-    def _getFuncC(self, params):
+    @staticmethod
+    def _get_func_c(params):
         return LpAffineExpression(params)
 
-    def buidTaskLp(self):
-        self.createC()
+    def build_task_lp(self):
+        self.create_c()
 
         for index in range(len(self.x)):
-            self.buildProblemA(index)
+            self.build_problem_a(index)
 
     def run(self):
-        self.buidTaskLp()
+        self.build_task_lp()
         super().run()
 
 
-class LpSolve_MAO(LpSolve):
+class LpSolveMAO(LpSolve):
 
     def __init__(self, x, y):
         super().__init__(x, y)
 
-    def createC(self):
-        self.problem += LpAffineExpression(self._buildFuncC()), 'Функция цели'
+    def create_c(self):
+        self.problem += LpAffineExpression(self._build_func_c()), 'Функция цели'
 
-    def _buildFuncC(self):
-        params = []
+    def _build_func_c(self):
+        return [self._create_tuples(self._get_r(), 1)]
 
-        params.append(self._createTuples(self._getR(), 1))
-
-        return params
-
-    def buidTaskLp(self):
-        self.createC()
+    def build_task_lp(self):
+        self.create_c()
 
         for index in range(len(self.x)):
-            self.buildProblemA(index)
+            self.build_problem_a(index)
 
         for index in range(len(self.x)):
-            self.buildProblemUV(index, index + 1 + len(self.x))
+            self.build_problem_u_v(index, index + 1 + len(self.x))
 
     def run(self):
-        self.buidTaskLp()
+        self.build_task_lp()
         super().run()
 
 
-class LpSolve_MCO(LpSolve):
+class LpSolveMCO(LpSolve):
 
-    def __init__(self, x, y, H1, H2):
+    def __init__(self, x, y, h1, h2):
         super().__init__(x, y)
-        self.H1 = H1
-        self.H2 = H2
+        self.H1 = h1
+        self.H2 = h2
 
-    def createC(self):
-        self.problem += LpAffineExpression(self._buildFuncC()), 'Функция цели'
+    def create_c(self):
+        self.problem += LpAffineExpression(self._build_func_c()), 'Функция цели'
 
-    def _buildFuncC(self):
+    def _build_func_c(self):
         params = []
 
         for index in range(len(self.x)):
             if index in self.H1:
-                params.append(self._createTuples(self._getUi(index+1), 1 / len(self.H1)))
-                params.append(self._createTuples(self._getVi(index+1), 1 / len(self.H1)))
+                params.append(self._create_tuples(self._get_u_by_i(index + 1), 1 / len(self.H1)))
+                params.append(self._create_tuples(self._get_v_by_i(index + 1), 1 / len(self.H1)))
 
-        params.append(self._createTuples(self._getR(), 1))
+        params.append(self._create_tuples(self._get_r(), 1))
 
         return params
 
-    def buidTaskLp(self):
-        self.createC()
+    def build_task_lp(self):
+        self.create_c()
 
         for index in range(len(self.x)):
-            self.buildProblemA(index)
+            self.build_problem_a(index)
 
         i = 1 + len(self.x)
         for index in range(len(self.x)):
             if index in self.H2:
-                self.buildProblemUV(index, i)
+                self.build_problem_u_v(index, i)
                 i += 1
 
     def run(self):
-        self.buidTaskLp()
+        self.build_task_lp()
         super().run()
 
 
@@ -281,7 +288,6 @@ class LpSolve_MCO(LpSolve):
 #
 # for variable in problem.variables():
 #     print (variable.name, "=", variable.varValue)
-
 
 
 # problem += 1/3 * (u1+u2+u3+v1+v2+v3) + r, 'Функция цели'
