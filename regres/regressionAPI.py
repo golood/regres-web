@@ -355,16 +355,14 @@ class TaskBiasEstimates:
 
         counter = 0
         i = 0
-        test_list_h1 = []
-        test_list_h2 = []
+        test_list_h1 = set()
         for h1 in combinations(self.indices_x, k):
             counter += 1
             h2 = tuple(filter(lambda x: (x not in h1), self.indices_x))
 
-            if h2 in test_list_h1:
+            if hash(h2) in test_list_h1:
                 continue
-            test_list_h1.append(h1)
-            test_list_h2.append(h2)
+            test_list_h1.add(hash(h1))
             self.tasks.append({'h1': h1, 'h2': h2})
 
             if counter % step == 0:
@@ -380,7 +378,6 @@ class TaskBiasEstimates:
             self.tasks = []
 
         del test_list_h1
-        del test_list_h2
 
         self.create_task_package()
 
