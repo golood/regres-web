@@ -130,7 +130,7 @@ class WorkerTask(Thread):
     Поток для решения задачи вычисления критерия смещения.
     """
 
-    def __init__(self, user_id=None, name=None, x=None, y=None):
+    def __init__(self, user_id=None, name=None, x=None, y=None, is_free_chlen=False):
         """Инициализация потока"""
         Thread.__init__(self)
         self.__create_worker(user_id)
@@ -138,7 +138,7 @@ class WorkerTask(Thread):
         self.x = x
         self.y = y
         self.indices_x = self._init_list(len(x))
-        self.task = TaskBiasEstimates(x=self.x, y=self.y, indices_x=self.indices_x)
+        self.task = TaskBiasEstimates(x=self.x, y=self.y, indices_x=self.indices_x, is_free_chlen=is_free_chlen)
         self.task_id = self.task.task_id
         self.__build_worker()
         log.info('Create task name: {0}, id: {1}, userId: {2}'

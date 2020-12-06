@@ -216,7 +216,8 @@ class LpSolveMCO(LpSolve):
         self.build_task_lp()
         super().run()
 
-
+# import time
+# start = time.time()
 # a01 = pulp.LpVariable('a01', lowBound=0)
 # a02 = pulp.LpVariable('a02', lowBound=0)
 #
@@ -238,8 +239,8 @@ class LpSolveMCO(LpSolve):
 # v6 = pulp.LpVariable('v6', lowBound=0)
 # r = pulp.LpVariable('r', lowBound=0)
 #
-# problem = pulp.LpProblem('0', pulp.LpMinimize)
-#
+# problem = pulp.LpProblem('0', pulp.const.LpMinimize)
+# #
 # problem += u1+v1+u2+v2+u3+v3+u4+v4+u5+v5+u6+v6, 'Функция цели'
 # problem += 2*a11-2*a12+5*a21-5*a22+u1-v1==7, '1'
 # problem += 9*a11-9*a12+4*a21-4*a22+u2-v2==9, '2'
@@ -249,11 +250,14 @@ class LpSolveMCO(LpSolve):
 # problem += 5*a11-5*a12+8*a21-8*a22+u6-v6==5, '6'
 #
 # problem.solve()
-#
+# stop = time.time()
+# print ("Время :")
+# print(stop - start)
 # for variable in problem.variables():
-#     print (variable.name, "=", variable.varValue)
+#     print(variable.name, "=", variable.varValue)
+# print (abs(value(problem.objective)))
 #
-# problem = pulp.LpProblem('0', pulp.LpMinimize)
+# problem = pulp.LpProblem('0', pulp.const.LpMinimize)
 #
 # problem += u1+v1+u2+v2+u3+v3+u4+v4+u5+v5+u6+v6, 'Функция цели'
 # problem += a01-a02+2*a11-2*a12+5*a21-5*a22+u1-v1==7, '1'
@@ -267,7 +271,7 @@ class LpSolveMCO(LpSolve):
 #
 # for variable in problem.variables():
 #     print (variable.name, "=", variable.varValue)
-
+# print (abs(value(problem.objective)))
 
 # problem += r, 'Функция цели'
 # problem += 2*a11-2*a12+5*a21-5*a22+u1-v1==7, '1'
@@ -288,7 +292,7 @@ class LpSolveMCO(LpSolve):
 #
 # for variable in problem.variables():
 #     print (variable.name, "=", variable.varValue)
-
+# print(abs(value(problem.objective)))
 
 # problem += 1/3 * (u1+u2+u3+v1+v2+v3) + r, 'Функция цели'
 # problem += 2*a11-2*a12+5*a21-5*a22+u1-v1==7, '1'
@@ -305,3 +309,59 @@ class LpSolveMCO(LpSolve):
 #
 # for variable in problem.variables():
 #     print (variable.name, "=", variable.varValue)
+
+# from cvxopt.modeling import variable, op
+# x = variable(16, 'x')
+#
+# z=(x[4]+x[5]+x[6]+x[7]+x[8]+x[9]+x[10]+x[11]+x[12]+x[13]+x[14]+x[15])
+# mass1 = (2*x[0]-2*x[1]+5*x[2]-5*x[3]+x[4]-x[5] == 7)
+# mass2 = (9*x[0]-9*x[1]+4*x[2]-4*x[3]+x[6]-x[7] == 9)
+# mass3 = (6*x[0]-6*x[1]+1*x[2]-1*x[3]+x[8]-x[9] == 1)
+# mass4 = (8*x[0]-8*x[1]+3*x[2]-3*x[3]+x[10]-x[11] == 6)
+# mass5 = (1*x[0]-1*x[1]+7*x[2]-7*x[3]+x[12]-x[13] == 4)
+# mass6 = (5*x[0]-5*x[1]+8*x[2]-8*x[3]+x[14]-x[15] == 5)
+# problem =op(z,[mass1,mass2,mass3,mass4 ,mass5,mass6])
+# problem.solve(solver='glpk')
+# problem.status
+# print("Результат:")
+# print(a.value, u.value, v.value)
+
+
+# from scipy.optimize import linprog
+# start = time.time()
+# c = [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1]
+# A_ub = None
+# b_ub = None
+# A_eq = [[2,-2,5,-5,1,0,0,0,0,0,-1,0,0,0,0,0],
+#         [9,-9,4,-4,0,1,0,0,0,0,0,-1,0,0,0,0],
+#         [6,-6,1,-1,0,0,1,0,0,0,0,0,-1,0,0,0],
+#         [8,-8,3,-3,0,0,0,1,0,0,0,0,0,-1,0,0],
+#         [1,-1,7,-7,0,0,0,0,1,0,0,0,0,0,-1,0],
+#         [5,-5,8,-8,0,0,0,0,0,1,0,0,0,0,0,-1]]
+# b_eq = [7,9,1,6,4,5]
+
+
+
+# c = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+# A_ub = [[0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,-1],
+#         [0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,-1],
+#         [0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,-1],
+#         [0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,-1],
+#         [0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,-1],
+#         [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,-1]]
+# b_ub = [0,0,0,0,0,0,]
+# A_eq = [[2,-2,5,-5,1,0,0,0,0,0,-1,0,0,0,0,0,0],
+#         [9,-9,4,-4,0,1,0,0,0,0,0,-1,0,0,0,0,0],
+#         [6,-6,1,-1,0,0,1,0,0,0,0,0,-1,0,0,0,0],
+#         [8,-8,3,-3,0,0,0,1,0,0,0,0,0,-1,0,0,0],
+#         [1,-1,7,-1,0,0,0,0,1,0,0,0,0,0,-1,0,0],
+#         [5,-5,8,-8,0,0,0,0,0,1,0,0,0,0,0,-1,0]]
+# b_eq = [7,9,1,6,4,5]
+
+# x = linprog(c, A_ub, b_ub, A_eq, b_eq,method='revised simplex')
+# x = linprog(c, A_ub, b_ub, A_eq, b_eq)
+# stop = time.time()
+# print ("Время :")
+# print(stop - start)
+# print(x.fun)
+# print(list(map(lambda x: float('{:.2f}'.format(x)), x.x)))
