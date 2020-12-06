@@ -409,7 +409,8 @@ def auto():
         user_id=meta_data.user_session_id,
         name="biasEstimates",
         x=meta_data.get_matrix(meta_data.matrix_x_index),
-        y=meta_data.get_row(meta_data.matrix_y_index))
+        y=meta_data.get_row(meta_data.matrix_y_index),
+        is_free_chlen=str(meta_data.freeChlen))
 
     task.start()
     time.sleep(1)
@@ -459,8 +460,6 @@ def bias_estimates():
 
 
 @app.route('/checkProgress', methods=['POST'])
-@redirect_to_main
-@update_time_active
 def check_progress():
     """
     Проверяет завершение расчета оценки смещения.

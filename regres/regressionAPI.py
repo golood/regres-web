@@ -24,24 +24,6 @@ red = redis.Redis(
     port=config.REDIS_PORT,
     decode_responses=True)
 
-threadLock = threading.Lock()
-# x = np.array([[2., 5.],
-#           [9., 4.],
-#           [6., 1.],
-#           [8., 3.],
-#           [1., 7.],
-#           [5., 8.]])
-#
-# y = np.array([7., 9., 1., 6., 4., 5.])
-#
-#
-# h1 = [0, 1, 2]
-#
-# h2 = [3, 4, 5]
-#
-# y1 = np.array([7, 9, 1])
-# y2 = np.array([6, 4, 5])
-
 
 class Method:
 
@@ -257,6 +239,7 @@ class RequestWorker(threading.Thread):
         self.queue = queue
         self.x = red.get('x')
         self.y = red.get('y')
+        self.freeChlen = red.get('freeChlen')
         self.percent = percent
         self.task_id = task_id
 
@@ -266,20 +249,18 @@ class RequestWorker(threading.Thread):
             index = self.queue.get()
             data = self.send_request(index)
 
-            threadLock.acquire()
             if data is not None:
-                ResultRepo().add_results(data['answer'], self.task_id,
-                                         self.percent)
-            threadLock.release()
+                ResultRepo().add_results(data['answer'], self.task_id, self.percent)
             self.queue.task_done()
 
-            log.debug('Complete package: {0}, taskId: {1}, lead time: {2}'
-                      .format(index, self.task_id, time.time() - start))
+            log.info('Complete package: {0}, taskId: {1}, lead time: {2}'.format(
+                index, self.task_id, time.time() - start))
 
     def send_request(self, index):
         data = {'index': index,
                 'x': self.x,
                 'y': self.y,
+                'freeChlen': self.freeChlen,
                 'list_h': red.get(index)}
 
         try:
@@ -291,7 +272,7 @@ class RequestWorker(threading.Thread):
             else:
                 return json.loads(response.content.decode('utf-8'))
         except Exception as e:
-            log.error('Exception request to worker', exc_info=True,
+            log.error('Exception request to worker: {}'.format(e), exc_info=True,
                       stack_info=True)
 
         return None
@@ -303,12 +284,13 @@ class TaskBiasEstimates:
     комбинаций подматриц Н1, Н2.
     """
 
-    def __init__(self, x, y, indices_x):
+    def __init__(self, x, y, indices_x, is_free_chlen):
         self.percent = 100
         self.x = x
         self.y = y
         red.mset({'x': json.dumps(x)})
         red.mset({'y': json.dumps(y)})
+        red.set('freeChlen', is_free_chlen)
         self.indices_x = indices_x
         self.tasks = []
         self.index = []
@@ -347,6 +329,8 @@ class TaskBiasEstimates:
         k = len_x // 2
         size = (math.factorial(len_x)
                 / (math.factorial(len_x - k) * math.factorial(k)))
+        if len_x % 2 == 0:
+            size /= 2
         step = int(config.COUNT_PACKAGE)
 
         percent = step / (size / 100)
@@ -380,12 +364,8 @@ class TaskBiasEstimates:
         del test_list_h1
 
         self.create_task_package()
-
-        while True:
-            if WorkerRepo.is_complete(self.task_id):
-                WorkerRepo.complete(self.task_id)
-                break
-            time.sleep(2)
+        self.clear_redis_data()
+        WorkerRepo.complete(self.task_id)
 
     def clear_redis_data(self):
         for i in self.index:
@@ -393,6 +373,7 @@ class TaskBiasEstimates:
 
         red.delete('x')
         red.delete('y')
+        red.delete('freeChlen')
 
     def get_result(self):
         results = []
