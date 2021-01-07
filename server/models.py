@@ -226,6 +226,29 @@ class MetaData:
         log.info('updateTimeActive')
         UserSessionRepo.update_user_active(self.user_session_id)
 
+    def __eq__(self, other):
+        return (isinstance(other, MetaData) and
+                self.session_id == other.session_id and
+                self.user_session_id == other.user_session_id and
+                self.mnk == other.mnk and
+                self.mnm == other.mnm and
+                self.mao == other.mao and
+                self.mco == other.mco and
+                self.freeChlen == other.freeChlen and
+                self.file_id == other.file_id and
+                self.load_matrix_id == other.load_matrix_id and
+                self.work_matrix_id == other.work_matrix_id and
+                self.len_x_load_matrix == other.len_x_load_matrix and
+                self.len_load_matrix == other.len_load_matrix and
+                self.len_x_work_matrix == other.len_x_work_matrix and
+                self.len_work_matrix == other.len_work_matrix and
+                self.index_y == other.index_y and
+                self.matrix_y_index == other.matrix_y_index and
+                self.matrix_x_index == other.matrix_x_index and
+                self.index_h1 == other.index_h1 and
+                self.index_h2 == other.index_h2 and
+                self.answer == other.answer)
+
     class DataEncoder(json.JSONEncoder):
         """
         Класс кодирует модель Data в JSON формат.
