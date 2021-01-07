@@ -39,14 +39,48 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
+def is_object_session(name):
+    """
+    Проверяет наличие объекта в сессии.
+    :param name: имя объекта.
+    :return: True, если объект есть в данных сессии,
+             False, в противном случае.
+    """
+
+    if name in session:
+        return True
+
+    return False
+
+
+def get_object_session(name):
+    """
+    Получает объект из данных сессии.
+    :param name: имя объекта.
+    :return: объект.
+    """
+
+    return session[name]
+
+
+def set_object_session(name, value):
+    """
+    Добавляет объект в данные сессии.
+    :param name: имя объекта.
+    :param value: объект.
+    """
+
+    session[name] = value
+
+
 def get_meta_data():
     """
     Получает мета данные пользователя сессии.
     :return: мета данные пользователя сессии.
     """
 
-    if 'meta_data' in session:
-        return MetaData(json.loads(session['meta_data']))
+    if is_object_session('meta_data'):
+        return MetaData(json.loads(get_object_session('meta_data')))
     else:
         meta_data = MetaData(None)
 
@@ -55,7 +89,7 @@ def get_meta_data():
                                       + request.headers.environ['REMOTE_ADDR']),
             request.remote_addr)
 
-        session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+        set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
 
         return meta_data
 
@@ -68,7 +102,7 @@ def redirect_to_main(f):
 
     @wraps(f)
     def decorator_function(*args, **kwargs):
-        if 'meta_data' not in session:
+        if not is_object_session('meta_data'):
             return redirect(url_for('main'))
         return f(*args, **kwargs)
 
@@ -138,8 +172,7 @@ def upload_file():
             meta_data.index_h1 = None
             meta_data.index_h2 = None
 
-            session['meta_data'] = json.dumps(meta_data,
-                                              cls=MetaData.DataEncoder)
+            set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
 
             return render_template('load_file.html',
                                    data=load_matrix,
@@ -148,7 +181,7 @@ def upload_file():
                                    meta_data=meta_data,
                                    verification=len(load_matrix) > len(load_matrix[0]))
 
-    meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
 
     if ('free_chlen' in request.args
             or 'check_MNK' in request.args
@@ -176,7 +209,7 @@ def upload_file():
         else:
             meta_data.mco = False
 
-    session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+    set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
 
     return render_template('load_file.html',
                            meta_data=meta_data)
@@ -263,7 +296,7 @@ def edit_work_matrix():
 
         meta_data.add_work_matrix(work_matrix)
 
-        session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+        set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
 
         return redirect(url_for('get_work_matrix'))
 
@@ -278,7 +311,7 @@ def get_key():
     """
 
     var_y = request.form['var_y']
-    meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
 
     if var_y == "":
         log.warn('Dependent variable value (y) not set')
@@ -297,7 +330,7 @@ def get_key():
 
     meta_data.set_y(int(var_y) - 1)
 
-    session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
+    set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
 
     return redirect(url_for('div_matrix'))
 
@@ -311,7 +344,7 @@ def div_matrix():
     :return: шаблон с набором идентификаторов строк используемой матрицы.
     """
 
-    meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
 
     task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
 
@@ -344,7 +377,7 @@ def answer():
     API для начала вычислений.
     :return: статус об окончании вычислений.
     """
-    meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
 
     h1_index = list(map(lambda x: int(x), request.json['h1']))
     h2_index = list(map(lambda x: int(x), request.json['h2']))
@@ -363,8 +396,8 @@ def answer():
         data.results = test.get_results()
 
         meta_data.answer = True
-        session['meta_data'] = json.dumps(meta_data, cls=MetaData.DataEncoder)
-        session['data'] = json.dumps(data, cls=DataEncoder)
+        set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
+        set_object_session('data', json.dumps(data, cls=DataEncoder))
 
         return Response(status=200)
     except Exception as e:
@@ -379,8 +412,8 @@ def answer1():
     Экран для отображения результатов вычислений.
     :return: шаблон с результатами вычисленений.
     """
-    meta_data = MetaData(json.loads(session['meta_data']))
-    data = Data(json.loads(session['data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
+    data = Data(json.loads(get_object_session('data')))
 
     if meta_data.freeChlen:
         a_len = range(len(data.results[0][1][0]))
@@ -403,7 +436,7 @@ def auto():
              раздерения матрицы.
     """
 
-    meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
 
     task = WorkerTask(
         user_id=meta_data.user_session_id,
@@ -438,7 +471,7 @@ def bias_estimates():
     :return: шаблон с результатами поиска критерия смещения.
     """
 
-    meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
 
     task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
 
@@ -466,7 +499,7 @@ def check_progress():
     :return: возвращает статус и процент прогресса завершения вычислений.
     """
 
-    meta_data = MetaData(json.loads(session['meta_data']))
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
 
     task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
     status, count = WorkerRepo.is_done(task_id)
