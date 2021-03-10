@@ -37,6 +37,7 @@ class Method:
         self.K = 0  # сумма квадратов ошибок
         self.O = 0  # максимальная по модулю ошибка
         self.nz = None
+        self.yy = []  # вычисленное y
 
     def _y(self, alfa):
         matrix_a = list(map(lambda item: list(map(lambda x, a: x * a, item, alfa)), self.x))
@@ -85,8 +86,15 @@ class Method:
 
         self.O = max(list(map(lambda x: abs(x), self.eps)))
 
+    def calculation_yy(self):
+        """
+        Вычисляет значение функции, с найденными коэффициентами.
+        """
+
+        self.yy = list(map(lambda item: sum(list(map(lambda x, a: x * a, item, self.a))), self.x))
+
     def get_result(self):
-        return self.a, self.eps, [self.e, self.M, self.K, self.O]
+        return self.a, self.eps, [self.e, self.M, self.K, self.O], self.yy
 
     def get_bias_estimate(self):
         """
@@ -133,6 +141,7 @@ class MNK(Method):
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
+        self.calculation_yy()
 
     def get_result(self):
         return 'МНК', super().get_result()
@@ -154,6 +163,7 @@ class MNM(Method):
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
+        self.calculation_yy()
 
     def get_result(self):
         return 'МНМ', super().get_result()
@@ -175,6 +185,7 @@ class MAO(Method):
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
+        self.calculation_yy()
 
     def get_result(self):
         return 'МАО', super().get_result()
@@ -198,6 +209,7 @@ class MCO(Method):
         self.calculation_m()
         self.calculation_k()
         self.calculation_o()
+        self.calculation_yy()
 
     def get_result(self):
         return 'МСО', super().get_result()

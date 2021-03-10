@@ -423,6 +423,7 @@ def answer1():
                            data=data,
                            aLen=a_len,
                            epsLen=range(1, len(data.results[0][1][1]) + 1),
+                           yLen=range(1, len(data.results[0][1][3]) + 1),
                            meta_data=meta_data)
 
 
