@@ -93,6 +93,12 @@
         {% endfor %}
       </tr>
     {% endfor %}
+    <tr>
+      <th scope="col">y</th>
+      {% for item in meta_data.get_row(meta_data.matrix_y_index) %}
+        <td>{{ item }}</td>
+      {% endfor %}
+    </tr>
   </tbody>
 </table>
 
@@ -123,6 +129,30 @@
     <p>M - сумма модулей ошибок.</p>
     <p>K - сумма квадратов ошибок.</p>
     <p>O - максимальная по модулю ошибка.</p>
+    <p>Ф - обобщенный критерий согласованности поведения</p>
+</div>
+
+<h4>Критерии</h4>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Ф</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in data.results %}
+      <tr>
+        <th scope="row">{{ task[0] }}</th>
+          {% for item in task[1][4] %}
+            <td>{{ '{:.2f}'.format(item) }}</td>
+          {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div>
+    <p>Ф - обобщенный критерий согласованности поведения</p>
 </div>
 </div>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>

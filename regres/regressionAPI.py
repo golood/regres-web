@@ -38,6 +38,7 @@ class Method:
         self.O = 0  # максимальная по модулю ошибка
         self.nz = None
         self.yy = []  # вычисленное y
+        self.osp = 0  # обобщеная согласованность поведения
 
     def _y(self, alfa):
         matrix_a = list(map(lambda item: list(map(lambda x, a: x * a, item, alfa)), self.x))
@@ -93,8 +94,22 @@ class Method:
 
         self.yy = list(map(lambda item: sum(list(map(lambda x, a: x * a, item, self.a))), self.x))
 
+    def calculation_(self):
+        """
+        Вычисление обобщенного критерия согласованного поведения.
+        """
+
+        sign = lambda x: 1 if x >= 0 else 0
+
+        a = []
+        for i in range(len(self.y) - 1):
+            for j in range(i + 1, len(self.y)):
+                a.append(sign((self.yy[i] - self.yy[j]) * (self.y[i] - self.y[j])))
+
+        self.osp = sum(a)
+
     def get_result(self):
-        return self.a, self.eps, [self.e, self.M, self.K, self.O], self.yy
+        return self.a, self.eps, [self.e, self.M, self.K, self.O], self.yy, [self.osp]
 
     def get_bias_estimate(self):
         """
@@ -142,6 +157,7 @@ class MNK(Method):
         self.calculation_k()
         self.calculation_o()
         self.calculation_yy()
+        self.calculation_()
 
     def get_result(self):
         return 'МНК', super().get_result()
@@ -164,6 +180,7 @@ class MNM(Method):
         self.calculation_k()
         self.calculation_o()
         self.calculation_yy()
+        self.calculation_()
 
     def get_result(self):
         return 'МНМ', super().get_result()
@@ -186,6 +203,7 @@ class MAO(Method):
         self.calculation_k()
         self.calculation_o()
         self.calculation_yy()
+        self.calculation_()
 
     def get_result(self):
         return 'МАО', super().get_result()
@@ -210,6 +228,7 @@ class MCO(Method):
         self.calculation_k()
         self.calculation_o()
         self.calculation_yy()
+        self.calculation_()
 
     def get_result(self):
         return 'МСО', super().get_result()
