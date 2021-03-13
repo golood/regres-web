@@ -23,6 +23,7 @@ SPACE = os.environ.get("SPACE")
 # POSTGRES_USER = 'web'
 # POSTGRES_PASSWORD = 'web'
 # POSTGRES_HOST = 'localhost'
+# POSTGRES_PORT = '5432'
 #
 # SECRET_KEY = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 #
