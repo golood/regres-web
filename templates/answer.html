@@ -74,7 +74,7 @@
   </tbody>
 </table>
 
-<h4>Расчетные значения зависимой переменной</h4>
+<h4>Значения зависимой переменной</h4>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -102,7 +102,7 @@
   </tbody>
 </table>
 
-<h4>Ошибки аппроксимации</h4>
+<h4>Критерии</h4>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -111,6 +111,7 @@
       <th scope="col">M</th>
       <th scope="col">K</th>
       <th scope="col">O</th>
+      <th scope="col">Ф</th>
     </tr>
   </thead>
   <tbody>
@@ -129,30 +130,9 @@
     <p>M - сумма модулей ошибок.</p>
     <p>K - сумма квадратов ошибок.</p>
     <p>O - максимальная по модулю ошибка.</p>
-</div>
-
-<h4>Критерии</h4>
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th scope="col">#</th>
-      <th scope="col">Ф</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for task in data.results %}
-      <tr>
-        <th scope="row">{{ task[0] }}</th>
-          {% for item in task[1][4] %}
-            <td>{{ '{:.2f}'.format(item) }}</td>
-          {% endfor %}
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-<div>
     <p>Ф - обобщенный критерий согласованности поведения</p>
 </div>
+
 </div>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>

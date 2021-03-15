@@ -109,7 +109,7 @@ class Method:
         self.osp = sum(a)
 
     def get_result(self):
-        return self.a, self.eps, [self.e, self.M, self.K, self.O], self.yy, [self.osp]
+        return self.a, self.eps, [self.e, self.M, self.K, self.O, self.osp], self.yy
 
     def get_bias_estimate(self):
         """
