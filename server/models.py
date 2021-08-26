@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import enum
 import json
 
 from server.db import MatrixRepo, LoadFilesRepo, UserSessionRepo
@@ -7,16 +8,28 @@ from server.logger import logger
 log = logger.get_logger('server')
 
 
+class MethodDivMatrixType(enum.Enum):
+    HAND = 1
+    MNK = 2
+    MNM = 3
+    MAO = 4
+    NONE = None
+
+
 class MetaData:
     """
     Класс для хранения мета данных пользователя.
     Используется для представления данных в барузере.
     """
 
+    # method_div_matrix_type: MethodDivMatrixType
+
     def __init__(self, data):
         if data is None:
             self.session_id = None
             self.user_session_id = None
+
+            self.method_div_matrix_type = None
 
             self.mnk = False
             self.mnm = False
@@ -50,6 +63,8 @@ class MetaData:
             self.mnm = data['mnm']
             self.mao = data['mao']
             self.mco = data['mco']
+
+            self.method_div_matrix_type = data['method_div_matrix_type']
 
             self.freeChlen = data['freeChlen']
             self.file_id = data['file_id']
@@ -234,6 +249,7 @@ class MetaData:
                 self.mnm == other.mnm and
                 self.mao == other.mao and
                 self.mco == other.mco and
+                self.method_div_matrix_type == other.method_div_matrix_type and
                 self.freeChlen == other.freeChlen and
                 self.file_id == other.file_id and
                 self.load_matrix_id == other.load_matrix_id and

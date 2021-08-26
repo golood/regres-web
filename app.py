@@ -13,7 +13,7 @@ from server import config
 from server.db import ResultRepo, WorkerRepo
 from server.logger import logger
 from server.main import Data, DataEncoder, Test, WorkerTask
-from server.models import MetaData
+from server.models import MetaData, MethodDivMatrixType
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
@@ -208,6 +208,17 @@ def upload_file():
             meta_data.mco = True
         else:
             meta_data.mco = False
+        if 'method' in request.args:
+            if request.args['method'] == 'hand':
+                meta_data.method_div_matrix_type = MethodDivMatrixType.HAND.value
+            elif request.args['method'] == 'mnk':
+                meta_data.method_div_matrix_type = MethodDivMatrixType.MNK.value
+            elif request.args['method'] == 'mnm':
+                meta_data.method_div_matrix_type = MethodDivMatrixType.MNM.value
+            elif request.args['method'] == 'mao':
+                meta_data.method_div_matrix_type = MethodDivMatrixType.MAO.value
+        else:
+            meta_data.method_div_matrix_type = MethodDivMatrixType.HAND.value
 
     set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
 
