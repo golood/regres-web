@@ -218,6 +218,9 @@ def upload_file():
                 meta_data.method_div_matrix_type = MethodDivMatrixType.MNM.value
             elif request.args['method'] == 'mao':
                 meta_data.method_div_matrix_type = MethodDivMatrixType.MAO.value
+
+            if request.args['delta']:
+                meta_data.delta = float(request.args['delta'])
         else:
             meta_data.method_div_matrix_type = MethodDivMatrixType.HAND.value
 
