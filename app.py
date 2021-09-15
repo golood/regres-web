@@ -14,6 +14,7 @@ from server.db import ResultRepo, WorkerRepo
 from server.logger import logger
 from server.main import Data, DataEncoder, Test, WorkerTask
 from server.models import MetaData, MethodDivMatrixType
+from server.services import divisionService
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
@@ -378,6 +379,65 @@ def div_matrix():
                            res=result,
                            resLen=range(1, len(result) + 1),
                            params={'filterId': 0, 'sortingId': 0})
+
+
+@app.route('/test')
+def test():
+    return 'Ok!'
+
+
+@app.route('/calculation', methods=['POST'])
+@redirect_to_main
+@update_time_active
+def calculation():
+    """
+    Вычисление задачи линейного программирования.
+    """
+    #todo  составить подматрицы н1 н2
+    # записать полученные массивы в meta_data
+    # решить задачу
+    # редирект на answer1 (отображения результата вычисления)
+
+    var_y = request.form['var_y']
+    meta_data = MetaData(json.loads(get_object_session('meta_data')))
+
+    if var_y == "":
+        log.warn('Dependent variable value (y) not set')
+        return render_template('error.html',
+                               e='Введите значение зависимой переменной!')
+    elif int(var_y) > meta_data.len_x_work_matrix:
+        log.warn('Index value exceeds limit: {0} - {1}'
+                 .format(var_y, meta_data.len_x_work_matrix))
+        return render_template('error.html',
+                               e='Значение индекса слишком большое!')
+    elif int(var_y) < 0:
+        log.warn('Index value cannot be negative: {0}'.format(var_y))
+        return render_template('error.html',
+                               e='Значение индекса не может быть '
+                                 'отрицательным!')
+
+    meta_data.set_y(int(var_y) - 1)
+
+    h1, h2 = divisionService.division(meta_data)
+
+    meta_data.set_h1_h2(h1, h2)
+
+    test = Test(
+        tasks=meta_data.get_check_task(),
+        x=meta_data.get_matrix(meta_data.matrix_x_index),
+        y=meta_data.get_row(meta_data.matrix_y_index),
+        h1=meta_data.get_row(meta_data.index_h1),
+        h2=meta_data.get_row(meta_data.index_h2))
+
+    data = Data(None)
+    data.results = test.get_results()
+
+    meta_data.answer = True
+
+    set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
+    set_object_session('data', json.dumps(data, cls=DataEncoder))
+
+    return redirect(url_for('answer1'))
 
 
 @app.route('/answer', methods=['POST'])
