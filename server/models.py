@@ -30,6 +30,7 @@ class MetaData:
             self.user_session_id = None
 
             self.method_div_matrix_type = None
+            self.delta = None
 
             self.mnk = False
             self.mnm = False
@@ -65,6 +66,7 @@ class MetaData:
             self.mco = data['mco']
 
             self.method_div_matrix_type = data['method_div_matrix_type']
+            self.delta = data['delta']
 
             self.freeChlen = data['freeChlen']
             self.file_id = data['file_id']
@@ -250,6 +252,7 @@ class MetaData:
                 self.mao == other.mao and
                 self.mco == other.mco and
                 self.method_div_matrix_type == other.method_div_matrix_type and
+                self.delta == other.delta and
                 self.freeChlen == other.freeChlen and
                 self.file_id == other.file_id and
                 self.load_matrix_id == other.load_matrix_id and
