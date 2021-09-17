@@ -9,10 +9,10 @@ log = logger.get_logger('server')
 
 
 class MethodDivMatrixType(enum.Enum):
-    HAND = 1
-    MNK = 2
-    MNM = 3
-    MAO = 4
+    HAND = 'hand'
+    MNK = 'mnk'
+    MNM = 'mnm'
+    MAO = 'mao'
     NONE = None
 
 
