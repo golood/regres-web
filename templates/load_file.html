@@ -64,10 +64,10 @@
     <br/>
   {% else %}
   <div>Введите индекс столбца для выбора зависимой переменной.</div>
-  <form {% if data.method == 'hand' %}action="/key" {% else %} action="/calculation" {% endif %} method="post">
+  <form {% if meta_data.method_div_matrix_type == 'hand' %}action="/key" {% else %} action="/calculation" {% endif %} method="post">
     <input class="form-control" name="var_y" type="number" placeholder="Default input">
     <br>
-    {% if data.method == 'hand' %}
+    {% if meta_data.method_div_matrix_type == 'hand' %}
         <button type="submit" class="btn btn-primary">Подготовить матрицы N1 и N2</button>
     {% else %}
         <button type="submit" class="btn btn-primary">Получить решение задачи</button>
