@@ -61,19 +61,19 @@
     <div class="col">
       <p>Методы разбиения подматриц для МСО:</p>
       <div class="form-check">
-        <input class="form-check-input" type="radio" name="method" value="hand" id="flexRadioDefault1" checked>
+        <input class="form-check-input" type="radio" name="method" value="hand" id="flexRadioDefault1" onchange="isCheckedMNK()" checked>
         <label class="form-check-label" for="flexRadioDefault1">
           Ручной выбор
         </label>
       </div>
       <div class="form-check">
-        <input class="form-check-input" type="radio" name="method" value="mnk" id="flexRadioDefault2">
+        <input class="form-check-input" type="radio" name="method" value="mnk" id="flexRadioDefault2" onchange="isCheckedMNK()">
         <label class="form-check-label" for="flexRadioDefault2">
           МНК
         </label>
       </div>
       <div class="form-check">
-        <input class="form-check-input" type="radio" name="method" value="mnm" id="flexRadioDefault3">
+        <input class="form-check-input" type="radio" name="method" value="mnm" id="flexRadioDefault3" onchange="isCheckedMNK()">
         <label class="form-check-label" for="flexRadioDefault3">
           МНМ
         </label>
@@ -84,7 +84,7 @@
 {#          МАО#}
 {#        </label>#}
 {#      </div>#}
-      <div class="input-group w-25 p-3">
+      <div class="input-group w-50 p-3" id="input-delta" hidden>
         <span class="input-group-text" id="inputGroup-sizing-default">
             δ =
         </span>
@@ -138,6 +138,18 @@
         $('#DialogNoValidData').modal(options)
         return false
 
+    }
+
+    function isCheckedMNK() {
+        var radio = document.getElementById('flexRadioDefault2')
+
+        console.log(radio.checked)
+        if (radio.checked)
+        {
+            document.getElementById('input-delta').hidden = false
+        } else {
+            document.getElementById('input-delta').hidden = true
+        }
     }
 </script>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
