@@ -14,7 +14,7 @@ from server.db import ResultRepo, WorkerRepo
 from server.logger import logger
 from server.main import Data, DataEncoder, Test, WorkerTask
 from server.models import MetaData, MethodDivMatrixType
-from server.services import divisionService
+from server.services import divisionService, workerService
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
@@ -384,11 +384,6 @@ def div_matrix():
                            params={'filterId': 0, 'sortingId': 0})
 
 
-@app.route('/test')
-def test():
-    return 'Ok!'
-
-
 @app.route('/calculation', methods=['POST'])
 @redirect_to_main
 @update_time_active
@@ -396,10 +391,6 @@ def calculation():
     """
     Вычисление задачи линейного программирования.
     """
-    #todo  составить подматрицы н1 н2
-    # записать полученные массивы в meta_data
-    # решить задачу
-    # редирект на answer1 (отображения результата вычисления)
 
     var_y = request.form['var_y']
     meta_data = MetaData(json.loads(get_object_session('meta_data')))
@@ -434,6 +425,15 @@ def calculation():
 
     data = Data(None)
     data.results = test.get_results()
+
+    if meta_data.mco:
+        mco_res = workerService.mco_api(meta_data)
+
+        for item in data.results:
+            if item[0] == 'МСО':
+                item[1][2].append(mco_res['answer'][1])
+                data.h1 = meta_data.get_row(meta_data.index_h1)
+                data.h2 = meta_data.get_row(meta_data.index_h2)
 
     meta_data.answer = True
 

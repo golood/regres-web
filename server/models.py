@@ -190,6 +190,24 @@ class MetaData:
 
         self.matrix_x_index = matrix_repo.add_matrix(x)
 
+    def get_matrix_x(self):
+        """
+        Получает матрицу х.
+        :return: матрицу вида [[],[],].
+        """
+
+        matrix_repo = MatrixRepo()
+
+        return matrix_repo.get_matrix(self.matrix_x_index)
+
+    def get_matrix_y(self):
+        """
+        Получает матрицу y.
+        :return: массив (вектор) в виде листа значений.
+        """
+
+        return MatrixRepo.get_row(self.matrix_y_index)
+
     @staticmethod
     def get_matrix(matrix_id):
         """
