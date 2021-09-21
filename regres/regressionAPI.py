@@ -295,7 +295,8 @@ class RequestWorker(threading.Thread):
                 'list_h': red.get(index)}
 
         try:
-            response = requests.post(config.URL_WORKER, json=data)
+            url = config.URL_WORKER + 'api'
+            response = requests.post(url, json=data)
 
             if response.status_code >= 400:
                 log.error('Exception request to worker: {0}'

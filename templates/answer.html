@@ -112,6 +112,7 @@
       <th scope="col">K</th>
       <th scope="col">O</th>
       <th scope="col">Ф</th>
+      <th scope="col">Оценка критерия смещения</th>
     </tr>
   </thead>
   <tbody>
@@ -132,6 +133,16 @@
     <p>O - максимальная по модулю ошибка.</p>
     <p>Ф - обобщенный критерий согласованности поведения</p>
 </div>
+
+{% if meta_data.mco %}
+    <h4>Индексы подматриц N1 N2</h4>
+    <div class="card" style="width: content-box;">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">N1: {% for item in data.h1 %} {{ item|int + 1 }} {% endfor %}</li>
+            <li class="list-group-item">N2: {% for item in data.h2 %} {{ item|int + 1 }} {% endfor %}</li>
+        </ul>
+    </div>
+{% endif %}
 
 </div>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
