@@ -30,7 +30,7 @@ SPACE = os.environ.get("SPACE")
 # REDIS_HOST = 'localhost'
 # REDIS_PORT = '6379'
 #
-# URL_WORKER = 'http://localhost:5001/api'
+# URL_WORKER = 'http://localhost:5001/'
 #
 # WORKER_THREAD = '1'
 # COUNT_PACKAGE = '500'

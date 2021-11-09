@@ -468,6 +468,8 @@ def answer():
 
         data = Data(None)
         data.results = test.get_results()
+        data.h1 = meta_data.get_row(meta_data.index_h1)
+        data.h2 = meta_data.get_row(meta_data.index_h2)
 
         meta_data.answer = True
         set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
