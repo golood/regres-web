@@ -30,7 +30,7 @@
 </ul>
 
 <div class="py-3 px-lg-5">
-<h4>Найденные значения параметра</h4>
+<h4>Найденные значения параметров</h4>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -74,7 +74,7 @@
   </tbody>
 </table>
 
-<h4>Значения зависимой переменной</h4>
+<h4>Расчётные значения зависимой переменной</h4>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -127,7 +127,7 @@
   </tbody>
 </table>
 <div>
-    <p>E - среднии относительные ошибки аппроксимации.</p>
+    <p>E - средние относительные ошибки аппроксимации.</p>
     <p>M - сумма модулей ошибок.</p>
     <p>K - сумма квадратов ошибок.</p>
     <p>O - максимальная по модулю ошибка.</p>
@@ -135,11 +135,11 @@
 </div>
 
 {% if meta_data.mco %}
-    <h4>Индексы подматриц N1 N2</h4>
+    <h4>Индексы подвыборок N<sub>1</sub> N<sub>2</sub></h4>
     <div class="card" style="width: content-box;">
         <ul class="list-group list-group-flush">
-            <li class="list-group-item">N1: {% for item in data.h1 %} {{ item|int + 1 }} {% endfor %}</li>
-            <li class="list-group-item">N2: {% for item in data.h2 %} {{ item|int + 1 }} {% endfor %}</li>
+            <li class="list-group-item">N<sub>1</sub>: {% for item in data.h1 %} {{ item|int + 1 }} {% endfor %}</li>
+            <li class="list-group-item">N<sub>2</sub>: {% for item in data.h2 %} {{ item|int + 1 }} {% endfor %}</li>
         </ul>
     </div>
 {% endif %}
