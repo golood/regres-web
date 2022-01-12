@@ -150,21 +150,18 @@
     </div>
 {% endif %}
 
-</div>
-
-<figure class="highcharts-figure">
+  </br>
+  <figure class="highcharts-figure">
     <div id="container"></div>
-</figure>
+  </figure>
+
+</div>
 
  <script>
     Highcharts.chart('container', {
 
     title: {
-        text: 'Фактические и расчетные значения'
-    },
-
-    subtitle: {
-        text: 'тут можно что-то уточнить'
+        text: 'Фактические и расчетные значения зависимой переменной'
     },
 
     yAxis: {
@@ -195,6 +192,10 @@
             },
             {#pointStart: 2010#}
         }
+    },
+
+    tooltip: {
+        pointFormat: '<p style="color:{series.color};font-weight: bold">{series.name}</p>  {point.y:.3f}'
     },
 
     series: [
