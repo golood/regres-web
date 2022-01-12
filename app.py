@@ -471,6 +471,13 @@ def answer():
         data.h1 = meta_data.get_row(meta_data.index_h1)
         data.h2 = meta_data.get_row(meta_data.index_h2)
 
+        if meta_data.mco:
+            mco_res = workerService.mco_api(meta_data)
+
+            for item in data.results:
+                if item[0] == 'МСО':
+                    item[1][2].append(mco_res['answer'][1])
+
         meta_data.answer = True
         set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
         set_object_session('data', json.dumps(data, cls=DataEncoder))
