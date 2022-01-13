@@ -1,146 +1,109 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"/>
-  <meta charset="UTF-8">
+{% extends 'base.html' %}
 
-  <title>Решение регрессионных уравнений</title>
-</head>
-<body>
-  <!-- Выпадающее меню -->
-  <ul class="nav nav-tabs">
-    <li class="nav-item">
-      <a class="nav-link active" href="/">Основное меню</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if not data.load_matrix_id %}disabled{% endif %}" href="/load">Загрузить исходные данные</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if not data.load_matrix_id %}disabled{% endif %}" href="/matrix">Загруженная матрица</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if not data.index_y %}disabled{% endif %}" href="/div">Разделить матрицу</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if not data.answer == True %}disabled{% endif %}" href="/answer">Результаты решения</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if not data.matrix_y_index %}disabled{% endif %}" href="/biasEstimates">Оценки критерия смещения</a>
-    </li>
-  </ul>
-
-  <div class="py-3 px-lg-5">
-
+{% block content %}
   <form name="setParam" action="/load" method="get" onsubmit="return validForm()">
-  <div class="row align-items-start">
-    <div class="col">
-      <p>Методы решения задачи:</p>
-      <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" name="check_MNK" checked>
-        <label class="form-check-label" for="exampleCheck1">МНК</label>
-      </div>
-      <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" name="check_MNM" checked>
-        <label class="form-check-label" for="exampleCheck1">МНМ</label>
-      </div>
-      <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" name="check_MAO" checked>
-        <label class="form-check-label" for="exampleCheck1">МАО</label>
-      </div>
-      <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" name="check_MCO" checked>
-        <label class="form-check-label" for="exampleCheck1">МСО</label>
-      </div>
+    <div class="row align-items-start">
+      <div class="col">
+        <p>Методы решения задачи:</p>
+        <div class="form-group form-check">
+          <input type="checkbox" class="form-check-input" name="check_MNK" {% if meta_data.mnk or not meta_data.file_id %}checked{% endif %}>
+          <label class="form-check-label" for="exampleCheck1">МНК</label>
+        </div>
+        <div class="form-group form-check">
+          <input type="checkbox" class="form-check-input" name="check_MNM" {% if meta_data.mnm or not meta_data.file_id %}checked{% endif %}>
+          <label class="form-check-label" for="exampleCheck1">МНМ</label>
+        </div>
+        <div class="form-group form-check">
+          <input type="checkbox" class="form-check-input" name="check_MAO" {% if meta_data.mao or not meta_data.file_id %}checked{% endif %}>
+          <label class="form-check-label" for="exampleCheck1">МАО</label>
+        </div>
+        <div class="form-group form-check">
+          <input type="checkbox" class="form-check-input" name="check_MCO" {% if meta_data.mco or not meta_data.file_id %}checked{% endif %}>
+          <label class="form-check-label" for="exampleCheck1">МСО</label>
+        </div>
 
-      <br/>
-      <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" name="free_chlen" {% if data %}{% if data.freeChlen == True %}checked="true"{% endif %}{% endif %}>
-        <label class="form-check-label" for="exampleCheck1">Использовать свободный член?</label>
+        <br/>
+        <div class="form-group form-check">
+          <input type="checkbox" class="form-check-input" name="free_chlen" {% if meta_data %}{% if meta_data.freeChlen == True %}checked="true"{% endif %}{% endif %}>
+          <label class="form-check-label" for="exampleCheck1">Использовать свободный член?</label>
+        </div>
       </div>
-    </div>
-    <div class="col">
-      <p>Методы разбиения подматриц для МСО:</p>
-      <div class="form-check">
-        <input
-                class="form-check-input"
-                type="radio"
-                name="method"
-                value="hand"
-                id="flexRadioDefault1"
-                onchange="isCheckedMNK()"
-                {% if data.method_div_matrix_type == None or data.method_div_matrix_type == 'hand' %}checked{% endif %}
-        >
-        <label class="form-check-label" for="flexRadioDefault1">
-          Ручной выбор
-        </label>
-      </div>
-      <div class="form-check">
-        <input
-                class="form-check-input"
-                type="radio"
-                name="method"
-                value="mnk"
-                id="flexRadioDefault2"
-                onchange="isCheckedMNK()"
-                {% if data.method_div_matrix_type == 'mnk' %}checked{% endif %}
-        >
-        <label class="form-check-label" for="flexRadioDefault2">
-          МНК
-        </label>
-      </div>
-      <div class="form-check">
-        <input
-                class="form-check-input"
-                type="radio"
-                name="method"
-                value="mnm"
-                id="flexRadioDefault3"
-                onchange="isCheckedMNK()"
-                {% if data.method_div_matrix_type == 'mnm' %}checked{% endif %}
-        >
-        <label class="form-check-label" for="flexRadioDefault3">
-          МНМ
-        </label>
-      </div>
-{#      <div class="form-check">#}
-{#        <input class="form-check-input" type="radio" name="method" value="mao" id="flexRadioDefault4">#}
-{#        <label class="form-check-label" for="flexRadioDefault4">#}
-{#          МАО#}
-{#        </label>#}
-{#      </div>#}
-      <div class="input-group w-50 p-3" id="input-delta" hidden>
-        <span class="input-group-text" id="inputGroup-sizing-default">
+      <div class="col">
+        <p>Методы разбиения подматриц для МСО:</p>
+        <div class="form-check">
+          <input
+                  class="form-check-input"
+                  type="radio"
+                  name="method"
+                  value="hand"
+                  id="flexRadioDefault1"
+                  onchange="isCheckedMNK()"
+                  {% if meta_data.method_div_matrix_type == None or meta_data.method_div_matrix_type == 'hand' %}checked{% endif %}
+          >
+          <label class="form-check-label" for="flexRadioDefault1">
+            Ручной выбор
+          </label>
+        </div>
+        <div class="form-check">
+          <input
+                  class="form-check-input"
+                  type="radio"
+                  name="method"
+                  value="mnk"
+                  id="flexRadioDefault2"
+                  onchange="isCheckedMNK()"
+                  {% if meta_data.method_div_matrix_type == 'mnk' %}checked{% endif %}
+          >
+          <label class="form-check-label" for="flexRadioDefault2">
+            МНК
+          </label>
+        </div>
+        <div class="form-check">
+          <input
+                  class="form-check-input"
+                  type="radio"
+                  name="method"
+                  value="mnm"
+                  id="flexRadioDefault3"
+                  onchange="isCheckedMNK()"
+                  {% if meta_data.method_div_matrix_type == 'mnm' %}checked{% endif %}
+          >
+          <label class="form-check-label" for="flexRadioDefault3">
+            МНМ
+          </label>
+        </div>
+        <div class="input-group w-50 p-3" id="input-delta" hidden>
+          <span class="input-group-text" id="inputGroup-sizing-default">
             δ =
-        </span>
-        <input type="number" step="0.00000000001" class="form-control" name="delta" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+          </span>
+          <input type="number" step="0.00000000001" class="form-control" name="delta" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+        </div>
       </div>
     </div>
-  </div>
 
-  <button type="submit" class="btn btn-primary">Загрузить исходные данные</button>
+    <button type="submit" class="btn btn-primary">Загрузить исходные данные</button>
   </form>
-  </div>
 
-<div class="modal fade" id="DialogNoValidData" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="staticBackdropLabel">Внимание!</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        Необходимо выбрать хотя бы один метод решения задачи.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+  <div class="modal fade" id="DialogNoValidData" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Внимание!</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Необходимо выбрать хотя бы один метод решения задачи.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<script>
+  <script>
     function validForm()
     {
         var form = document.forms["setParam"]
@@ -175,9 +138,6 @@
             document.getElementById('input-delta').hidden = true
         }
     }
-</script>
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-</body>
-</html>
+  </script>
+{% endblock %}
+

@@ -13,7 +13,7 @@ from server import config
 from server.db import ResultRepo, WorkerRepo
 from server.logger import logger
 from server.main import Data, DataEncoder, Test, WorkerTask
-from server.models import MetaData, MethodDivMatrixType
+from server.models import MetaData, MethodDivMatrixType, MenuTypes
 from server.services import divisionService, workerService
 
 app = Flask(__name__)
@@ -143,8 +143,9 @@ def main():
     """
 
     meta_data = get_meta_data()
+    meta_data.set_active_menu(MenuTypes.MAIN)
 
-    return render_template('main.html', data=meta_data)
+    return render_template('main.html', meta_data=meta_data)
 
 
 @app.route('/load', methods=['GET', 'POST'])
@@ -183,6 +184,7 @@ def upload_file():
                                    verification=len(load_matrix) > len(load_matrix[0]))
 
     meta_data = MetaData(json.loads(get_object_session('meta_data')))
+    meta_data.set_active_menu(MenuTypes.LOAD)
 
     if ('free_chlen' in request.args
             or 'check_MNK' in request.args
@@ -240,6 +242,7 @@ def show_matrix():
     """
 
     meta_data = get_meta_data()
+    meta_data.set_active_menu(MenuTypes.DATA)
     load_matrix = meta_data.get_matrix(meta_data.load_matrix_id)
 
     return render_template('matrix.html',
@@ -260,6 +263,7 @@ def get_work_matrix():
     """
 
     meta_data = get_meta_data()
+    meta_data.set_active_menu(MenuTypes.DATA)
     work_matrix = meta_data.get_matrix(meta_data.work_matrix_id)
 
     return render_template('matrix.html',
@@ -281,6 +285,7 @@ def edit_work_matrix():
 
     if request.method == 'GET':
         meta_data = get_meta_data()
+        meta_data.set_active_menu(MenuTypes.DATA)
         load_matrix = meta_data.get_matrix(meta_data.load_matrix_id)
 
         return render_template('matrix.html',
@@ -360,6 +365,7 @@ def div_matrix():
     """
 
     meta_data = MetaData(json.loads(get_object_session('meta_data')))
+    meta_data.set_active_menu(MenuTypes.DIV)
 
     task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
 
@@ -496,6 +502,7 @@ def answer1():
     :return: шаблон с результатами вычисленений.
     """
     meta_data = MetaData(json.loads(get_object_session('meta_data')))
+    meta_data.set_active_menu(MenuTypes.ANSWER)
     data = Data(json.loads(get_object_session('data')))
 
     if meta_data.freeChlen:
@@ -521,6 +528,7 @@ def auto():
     """
 
     meta_data = MetaData(json.loads(get_object_session('meta_data')))
+    meta_data.set_active_menu(MenuTypes.DIV)
 
     task = WorkerTask(
         user_id=meta_data.user_session_id,
@@ -556,6 +564,7 @@ def bias_estimates():
     """
 
     meta_data = MetaData(json.loads(get_object_session('meta_data')))
+    meta_data.set_active_menu(MenuTypes.BIAS)
 
     task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
 

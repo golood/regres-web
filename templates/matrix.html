@@ -1,101 +1,66 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"/>
-  <meta charset="UTF-8">
+{% extends 'base.html' %}
 
-  <title>Решение регрессионных уравнений</title>
-</head>
-<body>
-<!-- Выпадающее меню -->
-<ul class="nav nav-tabs">
-  <li class="nav-item">
-    <a class="nav-link" href="/">Основное меню</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="/load">Загрузить исходные данные</a>
-  </li>
-    <li class="nav-item">
-    <a class="nav-link active" href="/matrix">Загруженная матрица</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {% if not meta_data.index_y %}disabled{% endif %}" href="/div">Разделить матрицу</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {% if not meta_data.answer == True %}disabled{% endif %}" href="/answer">Результаты решения</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {% if not meta_data.matrix_y_index %}disabled{% endif %}" href="/biasEstimates">Оценки критерия смещения</a>
-  </li>
-</ul>
-<div class="py-3 px-lg-5">
-
-<a class="btn btn-primary" href="/matrix" role="button">Загруженная матрица</a>
-<a class="btn btn-primary" href="/workMatrix" role="button">Рабочая матрица</a>
-<a class="btn btn-primary" href="/editWorkMatrix" role="button">Редактировать рабочую матрицу</a>
-{% if data %}
-  {% if load %}
-    <div>Загруженная матрица</div>
-  {% else %}
-    <div>Рабочая матрица</div>
-  {% endif %}
-  <div style="height: 500px" class="table-responsive">
-  <table class="table table-sm table-striped table-bordered">
-    <thead> <!-- Column names -->
-      <tr>
-        <th scope="col">#</th>
-        {% for item in dataLen %}
-          <th scope="col">{{ item }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody> <!-- Data -->
-      {% for index in dataRowLen %}
-        <tr>
-          <th scope="row">{{ index }}</th>
-          {% for item in data[index-1] %}
-            <td>{{item}}</td>
+{% block content %}
+  <a class="btn btn-primary" href="/matrix" role="button">Загруженная матрица</a>
+  <a class="btn btn-primary" href="/workMatrix" role="button">Рабочая матрица</a>
+  <a class="btn btn-primary" href="/editWorkMatrix" role="button">Редактировать рабочую матрицу</a>
+  {% if data %}
+    {% if load %}
+      <div>Загруженная матрица</div>
+    {% else %}
+      <div>Рабочая матрица</div>
+    {% endif %}
+    <div style="height: 500px" class="table-responsive">
+      <table class="table table-sm table-striped table-bordered">
+        <thead> <!-- Column names -->
+          <tr>
+            <th scope="col">#</th>
+            {% for item in dataLen %}
+              <th scope="col">{{ item }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody> <!-- Data -->
+          {% for index in dataRowLen %}
+            <tr>
+              <th scope="row">{{ index }}</th>
+              {% for item in data[index-1] %}
+                <td>{{item}}</td>
+              {% endfor %}
+            </tr>
           {% endfor %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  </div>
-{% endif %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{% if edit %}
+  {% if edit %}
     <br/>
     <form action="/editWorkMatrix" method="post">
-    <div>Выберите индексы столбцов для рабочей матрицы.</div>
-    <div class="btn-group mr-2" role="group" aria-label="First group">
-    {% for item in dataLen %}
-      <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" name="check_{{ item-1 }}" checked>
-        <label class="form-check-label" for="exampleCheck1">{{item}}&#8195;</label>
+      <div>Выберите индексы столбцов для рабочей матрицы.</div>
+      <div class="btn-group mr-2" role="group" aria-label="First group">
+        {% for item in dataLen %}
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" name="check_{{ item-1 }}" checked>
+            <label class="form-check-label" for="exampleCheck1">{{item}}&#8195;</label>
+          </div>
+        {% endfor %}
       </div>
-    {% endfor %}
-    </div>
-    <br>
-    <button type="submit" class="btn btn-primary">Применить</button>
-  </form>
-{% else %}
-  <br/>
-  <div>Введите индекс столбца для выбора зависимой переменной.</div>
-  <form {% if meta_data.method_div_matrix_type == 'hand' %} action="/key" {% else %} action="/calculation" {% endif %} method="post">
-    <input class="form-control" name="var_y" type="number" placeholder="Default input">
-    <br>
-    {% if meta_data.method_div_matrix_type == 'hand' %}
-      <button type="submit" class="btn btn-primary">Подготовить матрицы N<sub>1</sub> и N<sub>2</sub></button>
-    {% else %}
-      <button type="submit" class="btn btn-primary">Получить решение задачи</button>
-    {% endif %}
-  </form>
-{% endif %}
-</div>
+      <br>
+      <button type="submit" class="btn btn-primary">Применить</button>
+    </form>
+  {% else %}
+    <br/>
+    <div>Введите индекс столбца для выбора зависимой переменной.</div>
+    <form {% if meta_data.method_div_matrix_type == 'hand' %} action="/key" {% else %} action="/calculation" {% endif %} method="post">
+      <input class="form-control" name="var_y" type="number" placeholder="Default input">
+      <br>
+      {% if meta_data.method_div_matrix_type == 'hand' %}
+        <button type="submit" class="btn btn-primary">Подготовить матрицы N<sub>1</sub> и N<sub>2</sub></button>
+      {% else %}
+        <button type="submit" class="btn btn-primary">Получить решение задачи</button>
+      {% endif %}
+    </form>
+  {% endif %}
 
-
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-</body>
-</html>
+{% endblock %}
