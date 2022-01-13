@@ -8,6 +8,15 @@ from server.logger import logger
 log = logger.get_logger('server')
 
 
+class MenuTypes(enum.Enum):
+    MAIN = 'MAIN'
+    LOAD = 'LOAD'
+    DATA = 'DATA'
+    DIV = 'DIV'
+    ANSWER = 'ANSWER'
+    BIAS = 'BIAS'
+
+
 class MethodDivMatrixType(enum.Enum):
     HAND = 'hand'
     MNK = 'mnk'
@@ -24,69 +33,113 @@ class MetaData:
 
     # method_div_matrix_type: MethodDivMatrixType
 
+    menu_active_main: bool
+    menu_active_load: bool
+    menu_active_data: bool
+    menu_active_div: bool
+    menu_active_answer: bool
+    menu_active_bias: bool
+
+    menu_lock_load: bool
+    menu_lock_data: bool
+    menu_lock_div: bool
+    menu_lock_answer: bool
+    menu_lock_bias: bool
+
     def __init__(self, data):
-        if data is None:
-            self.session_id = None
-            self.user_session_id = None
+        if data is not None:
+            self.menu_active_main = MetaData.get_value_bool(data, 'menu_active_main')
+            self.menu_active_load = MetaData.get_value_bool(data, 'menu_active_load')
+            self.menu_active_data = MetaData.get_value_bool(data, 'menu_active_data')
+            self.menu_active_div = MetaData.get_value_bool(data, 'menu_active_div')
+            self.menu_active_answer = MetaData.get_value_bool(data, 'menu_active_answer')
+            self.menu_active_bias = MetaData.get_value_bool(data, 'menu_active_bias')
 
-            self.method_div_matrix_type = None
-            self.delta = None
+            self.menu_lock_load = MetaData.get_value_bool(data, 'menu_lock_load')
+            self.menu_lock_data = MetaData.get_value_bool(data, 'menu_lock_data')
+            self.menu_lock_div = MetaData.get_value_bool(data, 'menu_lock_div')
+            self.menu_lock_answer = MetaData.get_value_bool(data, 'menu_lock_answer')
+            self.menu_lock_bias = MetaData.get_value_bool(data, 'menu_lock_bias')
 
-            self.mnk = False
-            self.mnm = False
-            self.mao = False
-            self.mco = False
+            self.session_id = MetaData.get_value(data, 'session_id')
+            self.user_session_id = MetaData.get_value(data, 'user_session_id')
 
-            self.freeChlen = False
-            self.file_id = None
-            self.load_matrix_id = None
-            self.work_matrix_id = None
+            self.method_div_matrix_type = MetaData.get_value(data, 'method_div_matrix_type')
+            self.delta = MetaData.get_value(data, 'delta')
 
-            self.len_x_load_matrix = None
-            self.len_load_matrix = None
-            self.len_x_work_matrix = None
-            self.len_work_matrix = None
+            self.mnk = MetaData.get_value_bool(data, 'mnk')
+            self.mnm = MetaData.get_value_bool(data, 'mnm')
+            self.mao = MetaData.get_value_bool(data, 'mao')
+            self.mco = MetaData.get_value_bool(data, 'mco')
 
-            self.index_y = None
+            self.freeChlen = MetaData.get_value_bool(data, 'freeChlen')
+            self.file_id = MetaData.get_value(data, 'file_id')
+            self.load_matrix_id = MetaData.get_value(data, 'load_matrix_id')
+            self.work_matrix_id = MetaData.get_value(data, 'work_matrix_id')
 
-            self.matrix_y_index = None
-            self.matrix_x_index = None
+            self.len_x_load_matrix = MetaData.get_value(data, 'len_x_load_matrix')
+            self.len_load_matrix = MetaData.get_value(data, 'len_load_matrix')
+            self.len_x_work_matrix = MetaData.get_value(data, 'len_x_work_matrix')
+            self.len_work_matrix = MetaData.get_value(data, 'len_work_matrix')
 
-            self.index_h1 = None
-            self.index_h2 = None
+            self.index_y = MetaData.get_value(data, 'index_y')
 
-            self.answer = False
-        else:
-            self.session_id = data['session_id']
-            self.user_session_id = data['user_session_id']
+            self.matrix_y_index = MetaData.get_value(data, 'matrix_y_index')
+            self.matrix_x_index = MetaData.get_value(data, 'matrix_x_index')
 
-            self.mnk = data['mnk']
-            self.mnm = data['mnm']
-            self.mao = data['mao']
-            self.mco = data['mco']
+            self.index_h1 = MetaData.get_value(data, 'index_h1')
+            self.index_h2 = MetaData.get_value(data, 'index_h2')
 
-            self.method_div_matrix_type = data['method_div_matrix_type']
-            self.delta = data['delta']
+            self.answer = MetaData.get_value_bool(data, 'answer')
 
-            self.freeChlen = data['freeChlen']
-            self.file_id = data['file_id']
-            self.load_matrix_id = data['load_matrix_id']
-            self.work_matrix_id = data['work_matrix_id']
+    @staticmethod
+    def get_value(data, key):
+        try:
+            return data[key]
+        except KeyError:
+            return None
 
-            self.len_x_load_matrix = data['len_x_load_matrix']
-            self.len_load_matrix = data['len_load_matrix']
-            self.len_x_work_matrix = data['len_x_work_matrix']
-            self.len_work_matrix = data['len_work_matrix']
+    @staticmethod
+    def get_value_bool(data, key):
+        try:
+            return data[key]
+        except KeyError:
+            return False
 
-            self.index_y = data['index_y']
+    def set_lock_menu(self):
+        self.menu_lock_load = True
+        self.menu_lock_data = True
+        self.menu_lock_div = True
+        self.menu_lock_answer = True
+        self.menu_lock_bias = True
 
-            self.matrix_y_index = data['matrix_y_index']
-            self.matrix_x_index = data['matrix_x_index']
+        if self._is_select_method():
+            self.menu_lock_load = False
+        if self.file_id:
+            self.menu_lock_data = False
+        if self.index_y is not None or self.index_h1 or self.index_h2:
+            self.menu_lock_div = False
+        if self.answer:
+            self.menu_lock_answer = False
+        if self.matrix_y_index is not None:
+            self.menu_lock_bias = False
 
-            self.index_h1 = data['index_h1']
-            self.index_h2 = data['index_h2']
+    def set_active_menu(self, menu_type: MenuTypes):
+        self._drop_active_menu()
+        self.set_lock_menu()
 
-            self.answer = data['answer']
+        if menu_type == MenuTypes.MAIN:
+            self.menu_active_main = True
+        elif menu_type == MenuTypes.LOAD:
+            self.menu_active_load = True
+        elif menu_type == MenuTypes.DATA:
+            self.menu_active_data = True
+        elif menu_type == MenuTypes.DIV:
+            self.menu_active_div = True
+        elif menu_type == MenuTypes.ANSWER:
+            self.menu_active_answer = True
+        elif menu_type == MenuTypes.BIAS:
+            self.menu_active_bias = True
 
     def add_session(self, session_id, ip):
         """
@@ -260,6 +313,17 @@ class MetaData:
 
         log.info('updateTimeActive')
         UserSessionRepo.update_user_active(self.user_session_id)
+
+    def _is_select_method(self):
+        return self.mnk or self.mnm or self.mao or self.mco
+
+    def _drop_active_menu(self):
+        self.menu_active_main = False
+        self.menu_active_load = False
+        self.menu_active_data = False
+        self.menu_active_div = False
+        self.menu_active_answer = False
+        self.menu_active_bias = False
 
     def __eq__(self, other):
         return (isinstance(other, MetaData) and
