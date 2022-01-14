@@ -225,6 +225,8 @@ def upload_file():
                 meta_data.delta = float(request.args['delta'])
         else:
             meta_data.method_div_matrix_type = MethodDivMatrixType.HAND.value
+        if 'mode' in request.args:
+            meta_data.mode = request.args['mode']
 
     set_object_session('meta_data', json.dumps(meta_data, cls=MetaData.DataEncoder))
 
