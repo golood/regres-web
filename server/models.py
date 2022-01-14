@@ -25,6 +25,11 @@ class MethodDivMatrixType(enum.Enum):
     NONE = None
 
 
+class CalculationMode(str, enum.Enum):
+    PREDICT = 'PREDICT'  # прогнозирование
+    STANDARD = 'STANDARD'
+
+
 class MetaData:
     """
     Класс для хранения мета данных пользователя.
@@ -46,6 +51,8 @@ class MetaData:
     menu_lock_answer: bool
     menu_lock_bias: bool
 
+    mode: CalculationMode
+
     def __init__(self, data):
         if data is not None:
             self.menu_active_main = MetaData.get_value_bool(data, 'menu_active_main')
@@ -60,6 +67,8 @@ class MetaData:
             self.menu_lock_div = MetaData.get_value_bool(data, 'menu_lock_div')
             self.menu_lock_answer = MetaData.get_value_bool(data, 'menu_lock_answer')
             self.menu_lock_bias = MetaData.get_value_bool(data, 'menu_lock_bias')
+
+            self.mode = MetaData.get_value(data, 'mode')
 
             self.session_id = MetaData.get_value(data, 'session_id')
             self.user_session_id = MetaData.get_value(data, 'user_session_id')
