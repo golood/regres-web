@@ -1,0 +1,31 @@
+{% block content %}
+  <form name="setParam" action="/answer" method="get" onsubmit="return validForm()">
+    <div class="row align-items-start">
+      <div class="col">
+        <p>Выберете правую границу обучающей выборки наблюдений:</p>
+        <div class="form-group form-range">
+          <input
+              type="range"
+              class="form-range"
+              min="1"
+              max="{{ meta_data.len_work_matrix - 1 }}"
+              step="1"
+              value="1"
+              name="range_value"
+              onchange="changeRange(this)"
+              id="customRange3"
+          >
+          <label class="form-check-label" for="exampleCheck1" id="controlForm">1</label>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Получить решение</button>
+  </form>
+
+  <script>
+      function changeRange(event) {
+          document.getElementById('controlForm').innerText = event.value
+      }
+  </script>
+{% endblock %}
