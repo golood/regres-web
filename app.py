@@ -505,6 +505,9 @@ def answer1():
     """
     meta_data = MetaData(json.loads(get_object_session('meta_data')))
     meta_data.set_active_menu(MenuTypes.ANSWER)
+
+    meta_data.range_value = int(request.args.get('range_value'))
+
     data = Data(json.loads(get_object_session('data')))
 
     if meta_data.freeChlen:

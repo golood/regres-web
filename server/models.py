@@ -53,6 +53,8 @@ class MetaData:
 
     mode: CalculationMode
 
+    range_value: int
+
     def __init__(self, data):
         if data is not None:
             self.menu_active_main = MetaData.get_value_bool(data, 'menu_active_main')
@@ -69,6 +71,8 @@ class MetaData:
             self.menu_lock_bias = MetaData.get_value_bool(data, 'menu_lock_bias')
 
             self.mode = MetaData.get_value(data, 'mode')
+
+            self.range_value = MetaData.get_value(data, 'range_value')
 
             self.session_id = MetaData.get_value(data, 'session_id')
             self.user_session_id = MetaData.get_value(data, 'user_session_id')
