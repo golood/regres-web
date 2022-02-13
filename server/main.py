@@ -3,7 +3,6 @@ import json
 from threading import Thread
 
 from regres.regressionAPI import Task, TaskBiasEstimates
-from server.db import WorkerRepo
 from server.logger import logger
 
 log = logger.get_logger('server')
@@ -127,31 +126,25 @@ class Test:
 
 class WorkerTask(Thread):
     """
-    Поток для решения задачи вычисления критерия смещения.
+    Поток для решения, задачи вычисления критерия смещения.
     """
 
-    def __init__(self, user_id=None, name=None, x=None, y=None, is_free_chlen=False):
+    def __init__(self, session=None, name=None, x=None, y=None):
         """Инициализация потока"""
         Thread.__init__(self)
-        self.__create_worker(user_id)
+        self.user_token = session.token.body
         self.name = name
-        self.x = x
-        self.y = y
-        self.indices_x = self._init_list(len(x))
-        self.task = TaskBiasEstimates(x=self.x, y=self.y, indices_x=self.indices_x, is_free_chlen=is_free_chlen)
-        self.task_id = self.task.task_id
-        self.__build_worker()
-        log.info('Create task name: {0}, id: {1}, userId: {2}'
-                 .format(name, self.task_id, user_id))
+        self.task = TaskBiasEstimates(session=session, x=x, y=y, indices_x=self._init_list(len(x)))
+        log.info(f'Create task name: {self.name} for user, token: {self.user_token}')
 
     def run(self):
         """Запуск потока"""
-        if WorkerRepo.run_worker(self.id):
-            log.info('The task ({0}) start, workerId: {1}'
-                     .format(self.task_id, self.id))
+        try:
             self.task.run()
-        else:
-            log.error('The task ({0}) did not start'.format(self.task_id))
+            log.info(f'The task ({self.name}) start, user token: {self.user_token}')
+        except Exception as e:
+            log.error(f'The task ({self.name}) did not start. User token: {self.user_token}\nerror: {str(e)}')
+            raise e
 
     @staticmethod
     def _init_list(len_x):
@@ -160,20 +153,3 @@ class WorkerTask(Thread):
             m.append(item)
 
         return m
-
-    def __create_worker(self, user_id):
-        """
-        Создаёт в БД нового работника. Получает идентификатор работника.
-        :param user_id: идентификатор пользователя.
-        """
-
-        repo = WorkerRepo()
-        self.id = repo.create_new_worker(user_id)
-
-    def __build_worker(self):
-        """
-        Собирает работника. Получает задачу для работника. Привязывает её к
-        себе в БД.
-        """
-
-        WorkerRepo.build_worker(self.id, self.name, self.task_id)

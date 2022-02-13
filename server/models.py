@@ -2,7 +2,10 @@
 import enum
 import json
 
-from server.db import MatrixRepo, LoadFilesRepo, UserSessionRepo
+import redis
+
+from regres.regressionAPI import Task
+from server.config import REDIS_HOST, REDIS_PORT
 from server.logger import logger
 
 log = logger.get_logger('server')
@@ -17,17 +20,41 @@ class MenuTypes(enum.Enum):
     BIAS = 'BIAS'
 
 
-class MethodDivMatrixType(enum.Enum):
+class MethodDivMatrixType(str, enum.Enum):
     HAND = 'hand'
     MNK = 'mnk'
     MNM = 'mnm'
     MAO = 'mao'
-    NONE = None
+    NONE = 'None'
+
+    @staticmethod
+    def build(value):
+        if not value:
+            return MethodDivMatrixType.NONE
+        return MethodDivMatrixType(value)
 
 
 class CalculationMode(str, enum.Enum):
     PREDICT = 'PREDICT'  # прогнозирование
     STANDARD = 'STANDARD'
+
+    @staticmethod
+    def build(value):
+        if not value:
+            return CalculationMode.STANDARD
+        return CalculationMode(value)
+
+
+class ShowMatrixMode(str, enum.Enum):
+    LOAD = 'LOAD'
+    WORK = 'WORK'
+    EDIT = 'EDIT'
+
+    @staticmethod
+    def build(value):
+        if not value:
+            return ShowMatrixMode.LOAD
+        return ShowMatrixMode(value)
 
 
 class MetaData:
@@ -35,8 +62,6 @@ class MetaData:
     Класс для хранения мета данных пользователя.
     Используется для представления данных в барузере.
     """
-
-    # method_div_matrix_type: MethodDivMatrixType
 
     menu_active_main: bool
     menu_active_load: bool
@@ -52,64 +77,110 @@ class MetaData:
     menu_lock_bias: bool
 
     mode: CalculationMode
+    show_matrix_mode: ShowMatrixMode
 
     range_value: int
 
-    def __init__(self, data):
-        if data is not None:
-            self.menu_active_main = MetaData.get_value_bool(data, 'menu_active_main')
-            self.menu_active_load = MetaData.get_value_bool(data, 'menu_active_load')
-            self.menu_active_data = MetaData.get_value_bool(data, 'menu_active_data')
-            self.menu_active_div = MetaData.get_value_bool(data, 'menu_active_div')
-            self.menu_active_answer = MetaData.get_value_bool(data, 'menu_active_answer')
-            self.menu_active_bias = MetaData.get_value_bool(data, 'menu_active_bias')
+    mnk: bool
+    mnm: bool
+    mao: bool
+    mco: bool
 
-            self.menu_lock_load = MetaData.get_value_bool(data, 'menu_lock_load')
-            self.menu_lock_data = MetaData.get_value_bool(data, 'menu_lock_data')
-            self.menu_lock_div = MetaData.get_value_bool(data, 'menu_lock_div')
-            self.menu_lock_answer = MetaData.get_value_bool(data, 'menu_lock_answer')
-            self.menu_lock_bias = MetaData.get_value_bool(data, 'menu_lock_bias')
+    method_div_matrix_type: MethodDivMatrixType
 
-            self.mode = MetaData.get_value(data, 'mode')
+    load_data: list
+    work_data: list
 
-            self.range_value = MetaData.get_value(data, 'range_value')
+    bias_filter: int
+    bias_sorting: int
 
-            self.session_id = MetaData.get_value(data, 'session_id')
-            self.user_session_id = MetaData.get_value(data, 'user_session_id')
+    h1: list
+    h2: list
 
-            self.method_div_matrix_type = MetaData.get_value(data, 'method_div_matrix_type')
-            self.delta = MetaData.get_value(data, 'delta')
+    index_y: int
 
-            self.mnk = MetaData.get_value_bool(data, 'mnk')
-            self.mnm = MetaData.get_value_bool(data, 'mnm')
-            self.mao = MetaData.get_value_bool(data, 'mao')
-            self.mco = MetaData.get_value_bool(data, 'mco')
+    results: list
 
-            self.freeChlen = MetaData.get_value_bool(data, 'freeChlen')
-            self.file_id = MetaData.get_value(data, 'file_id')
-            self.load_matrix_id = MetaData.get_value(data, 'load_matrix_id')
-            self.work_matrix_id = MetaData.get_value(data, 'work_matrix_id')
+    is_run_background_task: bool
+    is_run_bias_estimates: bool
+    is_done_bias_estimates: bool
 
-            self.len_x_load_matrix = MetaData.get_value(data, 'len_x_load_matrix')
-            self.len_load_matrix = MetaData.get_value(data, 'len_load_matrix')
-            self.len_x_work_matrix = MetaData.get_value(data, 'len_x_work_matrix')
-            self.len_work_matrix = MetaData.get_value(data, 'len_work_matrix')
+    def __init__(self, data=None):
+        self.menu_active_main = MetaData.get_value_bool(data, 'menu_active_main')
+        self.menu_active_load = MetaData.get_value_bool(data, 'menu_active_load')
+        self.menu_active_data = MetaData.get_value_bool(data, 'menu_active_data')
+        self.menu_active_div = MetaData.get_value_bool(data, 'menu_active_div')
+        self.menu_active_answer = MetaData.get_value_bool(data, 'menu_active_answer')
+        self.menu_active_bias = MetaData.get_value_bool(data, 'menu_active_bias')
 
-            self.index_y = MetaData.get_value(data, 'index_y')
+        self.menu_lock_load = MetaData.get_value_bool(data, 'menu_lock_load')
+        self.menu_lock_data = MetaData.get_value_bool(data, 'menu_lock_data')
+        self.menu_lock_div = MetaData.get_value_bool(data, 'menu_lock_div')
+        self.menu_lock_answer = MetaData.get_value_bool(data, 'menu_lock_answer')
+        self.menu_lock_bias = MetaData.get_value_bool(data, 'menu_lock_bias')
 
-            self.matrix_y_index = MetaData.get_value(data, 'matrix_y_index')
-            self.matrix_x_index = MetaData.get_value(data, 'matrix_x_index')
+        self.mode = CalculationMode.build(
+            MetaData.get_value(data, 'mode'))
+        self.show_matrix_mode = ShowMatrixMode.build(
+            MetaData.get_value(data, 'show_matrix_mode'))
 
-            self.index_h1 = MetaData.get_value(data, 'index_h1')
-            self.index_h2 = MetaData.get_value(data, 'index_h2')
+        self.range_value = MetaData.get_value(data, 'range_value')
 
-            self.answer = MetaData.get_value_bool(data, 'answer')
+        self.session_id = MetaData.get_value(data, 'session_id')
+        self.user_session_id = MetaData.get_value(data, 'user_session_id')
+
+        self.method_div_matrix_type = MethodDivMatrixType.build(
+            MetaData.get_value(data, 'method_div_matrix_type'))
+        self.delta = MetaData.get_value(data, 'delta')
+
+        self.mnk = MetaData.get_value_bool(data, 'mnk')
+        self.mnm = MetaData.get_value_bool(data, 'mnm')
+        self.mao = MetaData.get_value_bool(data, 'mao')
+        self.mco = MetaData.get_value_bool(data, 'mco')
+
+        self.freeChlen = MetaData.get_value_bool(data, 'freeChlen')
+
+        self.load_data = MetaData.get_value(data, 'load_data')
+        self.work_data = MetaData.get_value(data, 'work_data')
+
+        self.bias_filter = MetaData.get_value(data, 'bias_filter')
+        self.bias_sorting = MetaData.get_value(data, 'bias_sorting')
+
+        self.h1 = MetaData.get_value(data, 'h1')
+        self.h2 = MetaData.get_value(data, 'h2')
+
+        self.results = MetaData.get_value(data, 'results')
+
+        self.is_run_background_task = MetaData.get_value_bool(data, 'is_run_background_task')
+        self.is_run_bias_estimates = MetaData.get_value_bool(data, 'is_run_bias_estimates')
+        self.is_done_bias_estimates = MetaData.get_value_bool(data, 'is_done_bias_estimates')
+
+        self.file_id = MetaData.get_value(data, 'file_id')
+        self.load_matrix_id = MetaData.get_value(data, 'load_matrix_id')
+        self.work_matrix_id = MetaData.get_value(data, 'work_matrix_id')
+
+        self.len_x_load_matrix = MetaData.get_value(data, 'len_x_load_matrix')
+        self.len_load_matrix = MetaData.get_value(data, 'len_load_matrix')
+        self.len_x_work_matrix = MetaData.get_value(data, 'len_x_work_matrix')
+        self.len_work_matrix = MetaData.get_value(data, 'len_work_matrix')
+
+        self.index_y = MetaData.get_value(data, 'index_y')
+
+        self.matrix_y_index = MetaData.get_value(data, 'matrix_y_index')
+        self.matrix_x_index = MetaData.get_value(data, 'matrix_x_index')
+
+        self.index_h1 = MetaData.get_value(data, 'index_h1')
+        self.index_h2 = MetaData.get_value(data, 'index_h2')
+
+        self.answer = MetaData.get_value_bool(data, 'answer')
 
     @staticmethod
     def get_value(data, key):
         try:
             return data[key]
         except KeyError:
+            return None
+        except TypeError:
             return None
 
     @staticmethod
@@ -118,6 +189,105 @@ class MetaData:
             return data[key]
         except KeyError:
             return False
+        except TypeError:
+            return False
+
+    def x(self) -> list:
+        x = []
+        if self.mode == CalculationMode.STANDARD:
+            for item in self.work_data:
+                line = [] if not self.freeChlen else [1]
+                for index in range(len(item)):
+                    if index != self.index_y:
+                        line.append(item[index])
+                x.append(line)
+        elif self.mode == CalculationMode.PREDICT:
+            i = 0
+            for item in self.work_data:
+
+                if i == self.range_value:
+                    return x
+
+                line = [] if not self.freeChlen else [1]
+                for index in range(len(item)):
+                    if index != self.index_y:
+                        line.append(item[index])
+                x.append(line)
+                i += 1
+
+        return x
+
+    def y(self) -> list:
+        y = []
+        for item in self.work_data:
+            for index in range(len(item)):
+                if index == self.index_y:
+                    y.append(item[index])
+                    break
+        return y
+
+    def get_load_data_len(self) -> list:
+        """
+        Получает массив индексов столбцов загруженной матрицы.
+        Значения в массиве начинается с 1.
+        """
+        return list(map(int, range(1, len(self.load_data[0]) + 1)))
+
+    def get_load_data_rows_len(self) -> list:
+        """
+        Получает массив индексов строк загруженной матрицы.
+        Значения в массиве начинается с 1.
+        """
+        return list(map(int, range(1, len(self.load_data) + 1)))
+
+    def get_work_data_len(self) -> list:
+        """
+        Получает массив индексов столбцов рабочей матрицы.
+        Значения в массиве начинается с 1.
+        """
+        return list(map(int, range(1, len(self.work_data[0]) + 1)))
+
+    def get_work_data_rows_len(self) -> list:
+        """
+        Получает массив индексов строк рабочей матрицы.
+        Значения в массиве начинается с 1.
+        """
+        return list(map(int, range(1, len(self.work_data) + 1)))
+
+    def get_alfa_len(self):
+        """
+        Получает массив индексов альф.
+        """
+        if self.freeChlen:
+            return list(map(int, range(len(self.results[0][1][0]))))
+        else:
+            return list(map(int, range(1, len(self.results[0][1][0]) + 1)))
+
+    def get_epselon_len(self):
+        return list(map(int, range(1, len(self.results[0][1][1]) + 1)))
+
+    def get_selected_methods(self):
+        """
+        Получает выбранные методы решения задачи ЛП.
+        :return: массив с выбранными методами решения задачи.
+        """
+
+        return [self.mnk, self.mnm, self.mao, self.mco]
+
+    def run_bias_estimates(self):
+        self.is_run_background_task = True
+        self.is_run_bias_estimates = True
+        self.is_done_bias_estimates = False
+
+    def done_bias_estimates(self):
+        self.is_run_background_task = False
+        self.is_run_bias_estimates = False
+        self.is_done_bias_estimates = True
+
+    def stop_bias_estimates(self):
+        self.is_run_background_task = False
+        self.is_run_bias_estimates = False
+        self.is_done_bias_estimates = False
 
     def set_lock_menu(self):
         self.menu_lock_load = True
@@ -128,7 +298,7 @@ class MetaData:
 
         if self._is_select_method():
             self.menu_lock_load = False
-        if self.file_id:
+        if self.load_data:
             self.menu_lock_data = False
         if self.index_y is not None or self.index_h1 or self.index_h2:
             self.menu_lock_div = False
@@ -154,178 +324,57 @@ class MetaData:
         elif menu_type == MenuTypes.BIAS:
             self.menu_active_bias = True
 
-    def add_session(self, session_id, ip):
-        """
-        Добавляет запись о новой сессии в БД.
+    def set_params(self, form):
+        self.freeChlen = True if self.get_value(form, 'free_chlen') else False
+        self.mnk = True if self.get_value(form, 'check_MNK') else False
+        self.mnm = True if self.get_value(form, 'check_MNM') else False
+        self.mao = True if self.get_value(form, 'check_MAO') else False
+        self.mco = True if self.get_value(form, 'check_MCO') else False
+        self.method_div_matrix_type = MethodDivMatrixType.build(self.get_value(form, 'method'))
+        self.delta = float(self.get_value(form, 'delta')) if self.get_value(form, 'delta') else 0
+        self.mode = CalculationMode.build(self.get_value(form, 'mode'))
 
-        :param session_id: Сгенерированный идентификатор сессии.
-        :param ip: Адресс клиента.
-        """
+    def set_file(self, file):
+        _list = []
+        for line in file.stream.readlines():
+            _list.append(list(map(float, line.decode('utf-8').split())))
+        file.close()
+        self.load_data = _list
+        self.work_data = _list
+        del _list
 
-        self.session_id = session_id
-        user_session_id = UserSessionRepo.add(session_id, ip)
-        self.user_session_id = user_session_id
-        log.debug(f'Create new session: {user_session_id}')
+        # self.add_load_matrix(load_matrix)
+        # meta_data.index_h1 = None
+        # meta_data.index_h2 = None
 
-    def add_load_file(self, filename):
-        """
-        Добавляет запись о загрузке нового файла.
-        :param filename: имя загруженного файла.
-        :return имя файла.
-        """
+    def set_var_y(self, var_y):
+        self.index_y = int(var_y) - 1
 
-        filename = '{}-{}'.format(self.user_session_id, filename)
-        self.file_id = LoadFilesRepo.add_file(self.user_session_id, filename)
+    def edit_work_matrix(self, form):
+        indexes_work_matrix = self._read_indexes_work_matrix(form)
 
-        return filename
-
-    def add_load_matrix(self, matrix):
-        """
-        Добавляет созруженную матрицу. Делает загруженную матрицу рабочей.
-        :param matrix: загруженная матрица.
-        """
-
-        self.len_x_load_matrix = len(matrix[0])
-        self.len_load_matrix = len(matrix)
-        self.len_x_work_matrix = self.len_x_load_matrix
-        self.len_work_matrix = self.len_load_matrix
-
-        matrix_repo = MatrixRepo()
-        self.load_matrix_id = matrix_repo.add_matrix(matrix)
-        self.work_matrix_id = self.load_matrix_id
-
-    def add_work_matrix(self, matrix):
-        """
-        Добавляет новую рабочу матрицу.
-        :param matrix: рабочая матрица
-        """
-
-        matrix_repo = MatrixRepo()
-        self.work_matrix_id = matrix_repo.add_matrix(matrix)
-        self.len_x_work_matrix = len(matrix[0])
-        self.len_work_matrix = len(matrix)
-
-    def set_y(self, index_y):
-        """
-        Устанавливает зависимую переменную. Сохраняет в БД.
-        :param index_y: индекс с столбца с зависимой переменной.
-        """
-
-        matrix_repo = MatrixRepo()
-
-        self.index_y = index_y
-        y = []
-        for items in matrix_repo.get_matrix(self.work_matrix_id):
+        work_matrix = []
+        for items in self.load_data:
             index = 0
+            row = []
             for item in items:
-                if index == index_y:
-                    y.append(item)
+                if index in indexes_work_matrix:
+                    row.append(item)
                 index += 1
+            work_matrix.append(row)
 
-        self.matrix_y_index = matrix_repo.set_row(y)
+        self.work_data = work_matrix
+        del work_matrix
 
-        self.set_matrix_x()
+    def set_h(self, _json):
+        self.h1 = list(map(lambda x: int(x), _json['h1']))
+        self.h2 = list(map(lambda x: int(x), _json['h2']))
 
-    def set_matrix_x(self):
-        """
-        Устанавливает матрицу х. Сохраняет в БД.
-        """
+    def verification_load_data(self):
+        return len(self.load_data) > len(self.load_data[0])
 
-        matrix_repo = MatrixRepo()
-
-        x = []
-        for items in matrix_repo.get_matrix(self.work_matrix_id):
-            line = []
-            index = 0
-            for item in items:
-                if index != self.index_y:
-                    line.append(item)
-                index += 1
-            x.append(line)
-
-        if self.freeChlen:
-            new_x = []
-            for items in x:
-                line = [1]
-                for item in items:
-                    line.append(item)
-                new_x.append(line)
-
-            self.matrix_x_index = matrix_repo.add_matrix(new_x)
-            return
-
-        self.matrix_x_index = matrix_repo.add_matrix(x)
-
-    def get_matrix_x(self):
-        """
-        Получает матрицу х.
-        :return: матрицу вида [[],[],].
-        """
-
-        matrix_repo = MatrixRepo()
-
-        return matrix_repo.get_matrix(self.matrix_x_index)
-
-    def get_matrix_y(self):
-        """
-        Получает матрицу y.
-        :return: массив (вектор) в виде листа значений.
-        """
-
-        return MatrixRepo.get_row(self.matrix_y_index)
-
-    @staticmethod
-    def get_matrix(matrix_id):
-        """
-        Получает матрицу по идентификатору.
-        :param matrix_id: идентификатор матрицы.
-        :return: матрицу вида [[],[],].
-        """
-
-        matrix_repo = MatrixRepo()
-
-        return matrix_repo.get_matrix(matrix_id)
-
-    @staticmethod
-    def get_row(row_id):
-        """
-        Получает вектор по идентификатору.
-        :param row_id: идентификатор вектора.
-        :return: массив (вектор) в виде листа значений.
-        """
-
-        return MatrixRepo.get_row(row_id)
-
-    def set_h1_h2(self, h1, h2):
-        """
-        Устанавливает подматрицы Н1, Н2.
-        :param h1: идентификаторы строк целевой матрицы, образующие подматрицу Н1.
-        :param h2: идентификаторы строк целевой матрицы, образующие подматрицу Н2.
-        """
-
-        matrix_repo = MatrixRepo()
-
-        self.index_h1 = matrix_repo.set_row(h1)
-        self.index_h2 = matrix_repo.set_row(h2)
-
-    def get_check_task(self):
-        """
-        Получает лист с состояниями выбора методов решения задачи.
-        Выбранные методы для решения задачи помечены как True,
-        в противном случае False
-
-        :return: лист с состояниями выбора задач.
-        """
-
-        return [self.mnk, self.mnm, self.mao, self.mco]
-
-    def update_time_active(self):
-        """
-        Обновляет время активности клиента.
-        """
-
-        log.info('updateTimeActive')
-        UserSessionRepo.update_user_active(self.user_session_id)
+    def verification_h(self):
+        return len(self.work_data) / 2 > len(self.work_data[0])
 
     def _is_select_method(self):
         return self.mnk or self.mnm or self.mao or self.mco
@@ -337,6 +386,13 @@ class MetaData:
         self.menu_active_div = False
         self.menu_active_answer = False
         self.menu_active_bias = False
+
+    def _read_indexes_work_matrix(self, form):
+        indexes_work_matrix = []
+        for item in range(len(self.load_data[0])):
+            if 'check_{}'.format(item) in form:
+                indexes_work_matrix.append(item)
+        return indexes_work_matrix
 
     def __eq__(self, other):
         return (isinstance(other, MetaData) and
@@ -371,3 +427,157 @@ class MetaData:
             if isinstance(obj, MetaData):
                 return obj.__dict__
             return json.JSONEncoder.default(self, obj)
+
+
+class TableFilter(str, enum.Enum):
+    TEN = 'TEN'
+    FIFTY = 'FIFTY'
+    ONE_HUNDRED = 'ONE_HUNDRED'
+    ONE_THOUSAND = 'ONE_THOUSAND'
+
+    @staticmethod
+    def build(value):
+        if not value:
+            return TableFilter.TEN
+        return TableFilter(value)
+
+
+class TableSorting(str, enum.Enum):
+    E_min = 'E_min'
+    E_max = 'E_max'
+    F_min = 'F_min'
+    F_max = 'F_max'
+
+    @staticmethod
+    def build(value):
+        if not value:
+            return TableSorting.F_max
+        return TableSorting(value)
+
+
+class BiasEstimate:
+    """
+    Сущность набора оценок критерия смещения.
+    Вычисляется путем перебора всех возможных комбинация разбиения подматриц N1, N2.
+    """
+
+    """
+    Формат данных:
+        alfa: list
+        eps: list
+        E: float
+        Оценка критерия смещения: float
+        N1: list
+        N2: list
+    """
+    data: list
+    filter: TableFilter
+    sorting: TableSorting
+
+    last_index_dataset: int
+
+    def __init__(self, data=None):
+        if data is not None:
+            self.filter = TableFilter.build(BiasEstimate.get_value(data, 'filter'))
+            self.sorting = TableSorting.build(BiasEstimate.get_value(data, 'sorting'))
+            self.last_index_dataset = BiasEstimate.get_value(data, 'last_index_dataset')
+            self.data = BiasEstimate.get_value(data, 'data')
+        else:
+            self.last_index_dataset = None
+            self.filter = TableFilter.build(None)
+            self.sorting = TableSorting.build(None)
+            self.data = []
+
+    def get_len_data_indexes(self):
+        return list(map(int, range(1, len(self.data) + 1)))
+
+    def set_data(self):
+        return self.data
+
+    def get_data(self, token):
+        if self.last_index_dataset is None:
+            return None
+
+        data = []
+        r = self._get_redis()
+
+        for index in range(self.last_index_dataset):
+            _data = json.loads(r.get(f'{token}_bias_{index}'))
+
+            for item in _data:
+                data.append(item)
+
+            if self.sorting == TableSorting.E_max:
+                data = sorted(data, key=lambda x: x[2], reverse=True)
+            elif self.sorting == TableSorting.E_min:
+                data = sorted(data, key=lambda x: x[2])
+            elif self.sorting == TableSorting.F_max:
+                data = sorted(data, key=lambda x: x[3], reverse=True)
+            elif self.sorting == TableSorting.F_min:
+                data = sorted(data, key=lambda x: x[3])
+
+            if self.filter == TableFilter.TEN:
+                data = data[:10]
+            elif self.filter == TableFilter.FIFTY:
+                data = data[:50]
+            elif self.filter == TableFilter.ONE_HUNDRED:
+                data = data[:100]
+            elif self.filter == TableFilter.ONE_THOUSAND:
+                data = data[:1000]
+
+        return data
+
+    def set_filters(self, form):
+        self.filter = form.get('filter') if form.get('filter') is not None else TableFilter.TEN
+        self.sorting = form.get('sorting') if form.get('sorting') is not None else TableSorting.F_max
+
+    @staticmethod
+    def get_value(data, key):
+        try:
+            return data[key]
+        except KeyError:
+            return None
+        except TypeError:
+            return None
+
+    @staticmethod
+    def get_value_bool(data, key):
+        try:
+            return data[key]
+        except KeyError:
+            return False
+        except TypeError:
+            return False
+
+    @staticmethod
+    def _get_redis() -> redis.Redis:
+        return redis.Redis(decode_responses=True, host=REDIS_HOST, port=REDIS_PORT)
+
+    class DataEncoder(json.JSONEncoder):
+        """
+        Класс кодирует модель BiasEstimate в JSON формат.
+        """
+        def default(self, obj):
+            if isinstance(obj, BiasEstimate):
+                return obj.__dict__
+            return json.JSONEncoder.default(self, obj)
+
+
+class Data:
+    """
+    Подготовка данных к вычислениям.
+    """
+
+    task: Task
+
+    def __init__(self, meta_data: MetaData):
+        self.task = Task(
+            tasks=meta_data.get_selected_methods(),
+            x=meta_data.x(),
+            y=meta_data.y(),
+            h1=meta_data.h1,
+            h2=meta_data.h2)
+        self.task.run()
+
+    def get_result(self):
+        return self.task.get_results()

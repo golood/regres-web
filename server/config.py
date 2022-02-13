@@ -1,12 +1,7 @@
 import os
 
-POSTGRES_DB = os.environ.get('POSTGRES_DB') if os.environ.get('POSTGRES_DB') is not None else 'regres'
-POSTGRES_USER = os.environ.get('POSTGRES_USER') if os.environ.get('POSTGRES_USER') is not None else 'web'
-POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD') if os.environ.get('POSTGRES_PASSWORD') is not None else 'web'
-POSTGRES_HOST = os.environ.get('POSTGRES_HOST') if os.environ.get('POSTGRES_HOST') is not None else 'localhost'
-POSTGRES_PORT = os.environ.get('POSTGRES_PORT') if os.environ.get('POSTGRES_PORT') is not None else '5432'
-
 SECRET_KEY = os.environ.get('SECRET_KEY') if os.environ.get('SECRET_KEY') is not None else 'A0Zr98j/3yX R~'
+SECRET_JWT = os.environ.get('SECRET_JWT') if os.environ.get('SECRET_JWT') is not None else 'A0d/3yX R~'
 
 REDIS_HOST = os.environ.get('REDIS_HOST') if os.environ.get('REDIS_HOST') is not None else 'localhost'
 REDIS_PORT = os.environ.get("REDIS_PORT") if os.environ.get('REDIS_PORT') is not None else '6379'
