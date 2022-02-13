@@ -90,29 +90,24 @@ class LpSolve:
     def run(self):
         self.problem.solve()
 
-    def get_result(self):
-        a = []
-        u = []
-        v = []
+    def _get_var_u_v(self):
+        _vars = self.problem.variablesDict()
+        u, v = [], []
+        for index in range(1, len(self.x) + 1):
+            u.append(_vars[f'u{index}'].value())
+            v.append(_vars[f'v{index}'].value())
+        return u, v
 
-        variables = self.problem.variables()
-        index = 0
-        while index < len(variables):
-            if 'a' in variables[index].name:
-                a.append(variables[index].varValue - variables[index + 1].varValue)
-                index += 2
-                continue
-            if 'u' in variables[index].name:
-                u.append(variables[index].varValue)
-                index += 1
-                continue
-            if 'v' in variables[index].name:
-                v.append(variables[index].varValue)
-                index += 1
-                continue
-            if 'r' in variables[index].name:
-                index += 1
-                continue
+    def _get_var_a(self):
+        _vars = self.problem.variablesDict()
+        a = []
+        for index in range(1, len(self.x[0]) + 1):
+            a.append(_vars[f'a{index}{1}'].value() - _vars[f'a{index}{2}'].value())
+        return a
+
+    def get_result(self):
+        a = self._get_var_a()
+        u, v = self._get_var_u_v()
 
         eps = []
         for index in range(len(u)):

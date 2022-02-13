@@ -1,5 +1,5 @@
 {% block script %}
-  {% if isRun == True %}
+  {% if meta_data.is_run_bias_estimates %}
     <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
     <script type="text/javascript">
        function funonload() {
@@ -11,20 +11,30 @@
 {% endblock %}
 
 {% block content %}
-  {% if not verification %}
-    <div class="p-3 mb-2 bg-danger text-white">Внимание! Длина N<sub>1</sub> и N<sub>2</sub> должна быть больше, чем количество параметров. Загрузите другие данные!</div>
+  {% if not meta_data.verification_h() %}
+    <div class="p-3 mb-2 bg-danger text-white">
+      Внимание! Длина N<sub>1</sub> и N<sub>2</sub> должна быть больше, чем количество параметров. Загрузите другие данные!
+    </div>
     <br/>
   {% endif %}
 
-  {% if xLen %}
-    {% if h1 and h2 %}
+  {% if meta_data.x %}
+    {% if meta_data.h1 and meta_data.h2 %}
       <div class="container">
         <div class="row">
           <div class="col-sm">
             <h3>N<sub>1</sub></h3>
             <div id="l_group" class="list-group">
-              {% for item in h1 %}
-                <button id="l_{{item}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item}}">{{item + 1}}</button>
+              {% for item in meta_data.h1 %}
+                <button
+                    id="l_{{item}}"
+                    onclick="lbtn(this)"
+                    type="button"
+                    class="list-group-item list-group-item-action"
+                    value="{{item}}"
+                >
+                  {{item + 1}}
+                </button>
               {% endfor %}
             </div>
           </div>
@@ -33,8 +43,16 @@
           <div class="col-sm">
             <h3>N<sub>2</sub></h3>
             <div id="r_group" class="list-group">
-              {% for item in h2 %}
-                <button id="r_{{item}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item}}">{{item + 1}}</button>
+              {% for item in meta_data.h2 %}
+                <button
+                    id="r_{{item}}"
+                    onclick="lbtn(this)"
+                    type="button"
+                    class="list-group-item list-group-item-action"
+                    value="{{item}}"
+                >
+                  {{item + 1}}
+                </button>
               {% endfor %}
             </div>
           </div>
@@ -47,8 +65,16 @@
           <div class="col-sm">
             <h3>N<sub>1</sub></h3>
             <div id="l_group" class="list-group">
-              {% for item in xLen %}
-                <button id="l_{{item-1}}" onclick="lbtn(this)" type="button" class="list-group-item list-group-item-action" value="{{item-1}}">{{item}}</button>
+              {% for item in meta_data.get_load_data_rows_len() %}
+                <button
+                    id="l_{{item-1}}"
+                    onclick="lbtn(this)"
+                    type="button"
+                    class="list-group-item list-group-item-action"
+                    value="{{item-1}}"
+                >
+                  {{item}}
+                </button>
               {% endfor %}
             </div>
           </div>
@@ -63,12 +89,12 @@
       </div>
     {% endif %}
     <br/><br/>
-    <a class="btn btn-primary" href="/auto" role="button">Посчитать оценки критерия смещения</a>
+    <a class="btn btn-primary" href="/form/calculation_bias_estimates" role="button">Посчитать оценки критерия смещения</a>
     <button type="button" class="btn btn-primary" onclick="autoRender(this)">Автоматически распределить N<sub>1</sub>,N<sub>2</sub></button>
-    <button type="button" class="btn btn-primary" onclick="send(this)">Готово</button>
-    <a id="btn_answer" class="btn btn-primary" href="/answer" role="button" hidden="true">Получить решение</a>
+    <button type="button" class="btn btn-primary" onclick="send(this)">Получить решение</button>
+{#    <a id="btn_answer" class="btn btn-primary" href="/answer" role="button" hidden="true">Получить решение</a>#}
 
-    {% if isRun == True %}
+    {% if meta_data.is_run_bias_estimates %}
       <br/><br/>
       <div class="alert alert-primary" role="alert">
         Идёт вычисление оценки критерия смещения. Пожалуйста, подождите!
@@ -90,7 +116,8 @@
 
         function showButton(status)
         {
-          if (status.indexOf('done') !== -1)
+            console.log(status)
+          if (status)
           {
             document.getElementById("block-load-animation").remove()
             document.getElementById("showRes").removeAttribute("hidden");
@@ -126,7 +153,7 @@
           }
         }
       </script>
-    {% elif isRun == False %}
+    {% elif meta_data.is_run_background_task == True %}
       <br/><br/>
       <div class="alert alert-warning" role="alert">
          Вычисление оценки критерия смещения временно не возможно, все вычислительные потоки заняты.
@@ -134,27 +161,27 @@
       </div>
     {% endif %}
 
-    {% if auto %}
+    {% if bias and meta_data.is_done_bias_estimates %}
       <br/><br/>
-      <form action="/div" method="post">
+      <form name="biasFilter" action="/form/bias_filter" method="post">
         <div class="form-row align-items-center">
           <div class="col-auto my-1">
             <label class="mr-sm-2" for="filter">Фильтр</label>
             <select class="custom-select mr-sm-2" id="filter" name="filter">
-              <option {% if params.filterId == 0 %}selected {% endif %} value="0">20 результатов</option>
-              <option {% if params.filterId == 1 %}selected {% endif %} value="1">40 результатов</option>
-              <option {% if params.filterId == 2 %}selected {% endif %} value="2">100 результатов</option>
-              <option {% if params.filterId == 3 %}selected {% endif %} value="3">1000 результатов</option>
+              <option {% if bias.filter == "TEN" %}selected {% endif %} value="TEN">10 результатов</option>
+              <option {% if bias.filter == "FIFTY" %}selected {% endif %} value="FIFTY">50 результатов</option>
+              <option {% if bias.filter == "ONE_HUNDRED" %}selected {% endif %} value="ONE_HUNDRED">100 результатов</option>
+              <option {% if bias.filter == "ONE_THOUSAND" %}selected {% endif %} value="ONE_THOUSAND">1000 результатов</option>
             </select>
           </div>
 
           <div class="col-auto my-1">
             <label class="mr-sm-2" for="sorting">Сортировать по</label>
             <select class="custom-select mr-sm-2" id="sorting" name="sorting">
-              <option {% if params.sortingId == 0 %}selected {% endif %} value="0">оценке критерию смещения (по убыванию)</option>
-              <option {% if params.sortingId == 1 %}selected {% endif %} value="1">оценке критерию смещения (по возрастанию)</option>
-              <option {% if params.sortingId == 2 %}selected {% endif %} value="2">E (по убыванию)</option>
-              <option {% if params.sortingId == 3 %}selected {% endif %} value="3">E (по возрастанию)</option>
+              <option {% if bias.sorting == "F_max" %}selected {% endif %} value="F_max">оценке критерию смещения (по убыванию)</option>
+              <option {% if bias.sorting == "F_min" %}selected {% endif %} value="F_min">оценке критерию смещения (по возрастанию)</option>
+              <option {% if bias.sorting == "E_max" %}selected {% endif %} value="E_max">E (по убыванию)</option>
+              <option {% if bias.sorting == "E_min" %}selected {% endif %} value="E_min">E (по возрастанию)</option>
             </select>
           </div>
 
@@ -177,14 +204,14 @@
           </tr>
         </thead>
         <tbody> <!-- Data -->
-          {% for index in resLen %}
+          {% for index in bias.get_len_data_indexes() %}
             <tr id="biasEstimatesRow_{{ index }}">
               <th scope="row">{{ index }}</th>
-              {% for item in res[index-1] %}
+              {% for item in bias.data[index-1] %}
                 <td>{{item}}</td>
               {% endfor %}
               <th>
-                <button value="{{ index}}" type="button" class="btn btn-primary" onclick="getValuesForH1H2(this)">Применить</button>
+                <button value="{{ index }}" type="button" class="btn btn-primary" onclick="getValuesForH1H2(this)">Применить</button>
               </th>
             </tr>
           {% endfor %}
@@ -288,7 +315,7 @@
         function send(event) {
             var xhr = new XMLHttpRequest();
 
-            xhr.open('POST', '/answer', false);
+            xhr.open('POST', '/form/calculation', false);
 
             xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
 
@@ -299,7 +326,10 @@
 
             xhr.onloadend = function() {
                 if (xhr.status == 200)
-                    document.getElementById('btn_answer').removeAttribute('hidden');
+                {
+                    console.log('Поиск решения задач ЛП...')
+                    window.location.replace("http://localhost:5000/answer");
+                }
                 else
                     alert('Что-то пошло не так!');
             };

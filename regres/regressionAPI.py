@@ -13,7 +13,6 @@ import requests
 
 import regres.regression as regression
 import server.config as config
-from server.db import ResultRepo, WorkerRepo
 from server.logger import logger
 
 log = logger.get_logger('server')
@@ -236,7 +235,7 @@ class MCO(Method):
 
 class Task:
 
-    def __init__(self, tasks, x, y, h1=None, h2=None):
+    def __init__(self, tasks: list, x: list, y: list, h1=None, h2=None):
         self.methods = []
         if tasks[0]:
             self.methods.append(MNK(x, y))
@@ -264,15 +263,14 @@ class Task:
 class RequestWorker(threading.Thread):
     """Потоковый отправитель запросов в воркеры."""
 
-    def __init__(self, queue, counter, percent, task_id):
+    def __init__(self, queue, counter, percent, token):
         threading.Thread.__init__(self)
         self.threadID = counter
         self.queue = queue
-        self.x = red.get('x')
-        self.y = red.get('y')
-        self.freeChlen = red.get('freeChlen')
+        self.x = red.get(f'{token}_x')
+        self.y = red.get(f'{token}_y')
         self.percent = percent
-        self.task_id = task_id
+        self.token = token
 
     def run(self):
         while True:
@@ -281,26 +279,25 @@ class RequestWorker(threading.Thread):
             data = self.send_request(index)
 
             if data is not None:
-                ResultRepo().add_results(data['answer'], self.task_id, self.percent)
+                red.set(f'{self.token}_bias_{index}', json.dumps(data['answer']))
+                red.set(f'{self.token}_percent', float(red.get(f'{self.token}_percent')) + self.percent)
+                # ResultRepo().add_results(data['answer'], self.token, self.percent)
             self.queue.task_done()
 
-            log.info('Complete package: {0}, taskId: {1}, lead time: {2}'.format(
-                index, self.task_id, time.time() - start))
+            log.info(f'Complete package: {index}, token: {self.token}, lead time: {time.time() - start}')
 
     def send_request(self, index):
         data = {'index': index,
                 'x': self.x,
                 'y': self.y,
-                'freeChlen': self.freeChlen,
-                'list_h': red.get(index)}
+                'list_h': red.get(f'{self.token}_{index}')}
 
         try:
             url = config.URL_WORKER + 'api'
             response = requests.post(url, json=data)
 
             if response.status_code >= 400:
-                log.error('Exception request to worker: {0}'
-                          .format(response.content.decode('utf-8')))
+                log.error(f'Exception request to worker: {response.content.decode("utf-8")}')
             else:
                 return json.loads(response.content.decode('utf-8'))
         except Exception as e:
@@ -316,17 +313,17 @@ class TaskBiasEstimates:
     комбинаций подматриц Н1, Н2.
     """
 
-    def __init__(self, x, y, indices_x, is_free_chlen):
+    def __init__(self, session,  x, y, indices_x):
+        self.session = session
+        self.token = session.token.body
         self.percent = 100
         self.x = x
         self.y = y
-        red.mset({'x': json.dumps(x)})
-        red.mset({'y': json.dumps(y)})
-        red.set('freeChlen', is_free_chlen)
+        red.mset({f'{self.token}_x': json.dumps(x)})
+        red.mset({f'{self.token}_y': json.dumps(y)})
         self.indices_x = indices_x
         self.tasks = []
         self.index = []
-        self.task_id = ResultRepo.create_task()
 
     def run(self):
         self.get_all_combinations()
@@ -338,8 +335,9 @@ class TaskBiasEstimates:
 
         queue = Queue()
         percent = float('{:.3f}'.format(self.percent))
+        red.set(f'{self.token}_percent', 0)
         for i in range(int(config.WORKER_THREAD)):
-            t = RequestWorker(queue, i, percent, self.task_id)
+            t = RequestWorker(queue, i, percent, self.token)
             t.setDaemon(True)
             t.start()
         log.info('Started {0} thread workers'.format(config.WORKER_THREAD))
@@ -383,29 +381,36 @@ class TaskBiasEstimates:
 
             if counter % step == 0:
                 self.index.append(i)
-                red.mset({str(i): json.dumps(self.tasks)})
+                red.mset({f'{self.token}_{i}': json.dumps(self.tasks)})
                 i += 1
                 counter = 0
                 self.tasks = []
 
         if counter != 0:
             self.index.append(i)
-            red.mset({str(i): json.dumps(self.tasks)})
+            red.mset({f'{self.token}_{i}': json.dumps(self.tasks)})
             self.tasks = []
 
         del test_list_h1
 
+        bias = self.session.bias
+        bias.last_index_dataset = len(self.index)
+        self.session.bias = bias
+
         self.create_task_package()
         self.clear_redis_data()
-        WorkerRepo.complete(self.task_id)
+
+        meta_data = self.session.meta_data
+        meta_data.done_bias_estimates()
+
+        self.session.meta_data = meta_data
 
     def clear_redis_data(self):
         for i in self.index:
-            red.delete(str(i))
+            red.delete(f'{self.token}_{i}')
 
-        red.delete('x')
-        red.delete('y')
-        red.delete('freeChlen')
+        red.delete(f'{self.token}_x')
+        red.delete(f'{self.token}_y')
 
     def get_result(self):
         results = []

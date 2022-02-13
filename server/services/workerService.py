@@ -11,11 +11,11 @@ log = logger.get_logger('server')
 
 def mco_api(meta_data: MetaData):
     data = {
-        'x': meta_data.get_matrix_x(),
-        'y': meta_data.get_matrix_y(),
+        'x': meta_data.x(),
+        'y': meta_data.y(),
         'freeChlen': meta_data.freeChlen,
-        'h1': meta_data.get_row(meta_data.index_h1),
-        'h2': meta_data.get_row(meta_data.index_h2)
+        'h1': meta_data.h1,
+        'h2': meta_data.h2
     }
 
     try:

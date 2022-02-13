@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <form name="setParam" action="/load" method="get" onsubmit="return validForm()">
+  <form name="setParam" action="/form/set_params" method="post" onsubmit="return validForm()">
     <div class="row align-items-start">
       <div class="col">
         <p>Методы решения задачи:</p>
@@ -64,7 +64,7 @@
                   value="hand"
                   id="flexRadioDefault1"
                   onchange="isCheckedMNK()"
-                  {% if meta_data.method_div_matrix_type == None or meta_data.method_div_matrix_type == 'hand' %}checked{% endif %}
+                  {% if meta_data.method_div_matrix_type == 'None' or meta_data.method_div_matrix_type == 'hand' %}checked{% endif %}
           >
           <label class="form-check-label" for="flexRadioDefault1">
             Ручной выбор

@@ -1,45 +1,27 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import render_table_load_data, render_table_work_data %}
 
 {% block content %}
   <a class="btn btn-primary" href="/matrix" role="button">Загруженная матрица</a>
   <a class="btn btn-primary" href="/workMatrix" role="button">Рабочая матрица</a>
   <a class="btn btn-primary" href="/editWorkMatrix" role="button">Редактировать рабочую матрицу</a>
-  {% if data %}
-    {% if load %}
+  {% if meta_data.load_data %}
+    {% if meta_data.show_matrix_mode == 'LOAD' or meta_data.show_matrix_mode == 'EDIT' %}
       <div>Загруженная матрица</div>
+      {{ render_table_load_data(meta_data) }}
     {% else %}
       <div>Рабочая матрица</div>
+      {{ render_table_work_data(meta_data) }}
     {% endif %}
-    <div style="height: 500px" class="table-responsive">
-      <table class="table table-sm table-striped table-bordered">
-        <thead> <!-- Column names -->
-          <tr>
-            <th scope="col">#</th>
-            {% for item in dataLen %}
-              <th scope="col">{{ item }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody> <!-- Data -->
-          {% for index in dataRowLen %}
-            <tr>
-              <th scope="row">{{ index }}</th>
-              {% for item in data[index-1] %}
-                <td>{{item}}</td>
-              {% endfor %}
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+
   {% endif %}
 
-  {% if edit %}
+  {% if meta_data.show_matrix_mode == 'EDIT' %}
     <br/>
-    <form action="/editWorkMatrix" method="post">
+    <form action="/form/edit_work_matrix" method="post">
       <div>Выберите индексы столбцов для рабочей матрицы.</div>
       <div class="btn-group mr-2" role="group" aria-label="First group">
-        {% for item in dataLen %}
+        {% for item in meta_data.get_load_data_len() %}
           <div class="form-group form-check">
             <input type="checkbox" class="form-check-input" name="check_{{ item-1 }}" checked>
             <label class="form-check-label" for="exampleCheck1">{{item}}&#8195;</label>
@@ -52,7 +34,7 @@
   {% else %}
     <br/>
     <div>Введите индекс столбца для выбора зависимой переменной.</div>
-    <form {% if meta_data.method_div_matrix_type == 'hand' %} action="/key" {% else %} action="/calculation" {% endif %} method="post">
+    <form {% if meta_data.method_div_matrix_type == 'hand' %} action="/form/set_var_y" {% else %} action="/form/calculation_auto_div" {% endif %} method="post">
       <input class="form-control" name="var_y" type="number" placeholder="Default input">
       <br>
       {% if meta_data.method_div_matrix_type == 'hand' %}
