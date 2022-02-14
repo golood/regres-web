@@ -17,7 +17,13 @@
       <br/>
     {% else %}
     <div>Введите индекс столбца для выбора зависимой переменной.</div>
-      <form {% if meta_data.method_div_matrix_type == 'hand' %}action="/form/set_var_y" {% else %} action="/form/calculation_auto_div" {% endif %} method="post">
+      <form
+          {% if meta_data.method_div_matrix_type == 'hand' %}
+            action="/form/set_var_y"
+          {% else %}
+            action="/form/calculation_auto_div"
+          {% endif %}
+          method="post">
         <input class="form-control" name="var_y" type="number" placeholder="Default input">
         <br>
         {% if meta_data.method_div_matrix_type == 'hand' %}
