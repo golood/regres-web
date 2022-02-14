@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, R
 
 from server import config
 from server.logger import logger
-from server.main import WorkerTask
+from server.main import WorkerTaskAsync, WorkerTask
 from server.models import MenuTypes, ShowMatrixMode, Data
 from server.services import divisionService, workerService
 from server.session import Session
@@ -439,9 +439,16 @@ def form_calculation_predict():
     save_session(_session)
 
     meta_data = _session.meta_data
-    meta_data.range_value = int(request.args.get('range_value'))
-    # todo добавить логику решения задачи прогнозирования.
-    pass
+    meta_data.range_value = int(request.form.get('range_value'))
+
+    task = WorkerTask(
+        session=_session,
+        name="calculation_predict",
+        x=meta_data.x(),
+        y=meta_data.y())
+    task.start()
+
+    return 'Ok!'
 
 
 @app.route('/form/calculation_bias_estimates', methods=['GET'])
@@ -455,9 +462,8 @@ def form_calculation_bias_estimates():
     _session.bias = bias
 
     meta_data = _session.meta_data
-    task = WorkerTask(
+    task = WorkerTaskAsync(
         session=_session,
-        # token=_session.token.body,
         name="biasEstimates",
         x=meta_data.x(),
         y=meta_data.y())

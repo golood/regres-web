@@ -161,7 +161,7 @@
       </div>
     {% endif %}
 
-    {% if bias and meta_data.is_done_bias_estimates %}
+    {% if bias.data and meta_data.is_done_bias_estimates %}
       <br/><br/>
       <form name="biasFilter" action="/form/bias_filter" method="post">
         <div class="form-row align-items-center">

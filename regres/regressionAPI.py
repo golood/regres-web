@@ -263,7 +263,7 @@ class Task:
 class RequestWorker(threading.Thread):
     """Потоковый отправитель запросов в воркеры."""
 
-    def __init__(self, queue, counter, percent, token):
+    def __init__(self, queue, counter, percent, token, sync):
         threading.Thread.__init__(self)
         self.threadID = counter
         self.queue = queue
@@ -271,6 +271,7 @@ class RequestWorker(threading.Thread):
         self.y = red.get(f'{token}_y')
         self.percent = percent
         self.token = token
+        self.sync = sync
 
     def run(self):
         while True:
@@ -279,9 +280,12 @@ class RequestWorker(threading.Thread):
             data = self.send_request(index)
 
             if data is not None:
-                red.set(f'{self.token}_bias_{index}', json.dumps(data['answer']))
-                red.set(f'{self.token}_percent', float(red.get(f'{self.token}_percent')) + self.percent)
-                # ResultRepo().add_results(data['answer'], self.token, self.percent)
+                if not self.sync:
+                    red.set(f'{self.token}_bias_{index}', json.dumps(data['answer']))
+                    red.set(f'{self.token}_percent', float(red.get(f'{self.token}_percent')) + self.percent)
+                else:
+                    red.set(f'{self.token}_max_bias', json.dumps(max(data["answer"], key=lambda x: x[3])))
+
             self.queue.task_done()
 
             log.info(f'Complete package: {index}, token: {self.token}, lead time: {time.time() - start}')
@@ -313,7 +317,7 @@ class TaskBiasEstimates:
     комбинаций подматриц Н1, Н2.
     """
 
-    def __init__(self, session,  x, y, indices_x):
+    def __init__(self, session,  x, y, indices_x, sync=False):
         self.session = session
         self.token = session.token.body
         self.percent = 100
@@ -324,6 +328,7 @@ class TaskBiasEstimates:
         self.indices_x = indices_x
         self.tasks = []
         self.index = []
+        self.sync = sync
 
     def run(self):
         self.get_all_combinations()
@@ -335,9 +340,9 @@ class TaskBiasEstimates:
 
         queue = Queue()
         percent = float('{:.3f}'.format(self.percent))
-        red.set(f'{self.token}_percent', 0)
+        red.set(f'{self.token}_percent', 0) if not self.sync else None
         for i in range(int(config.WORKER_THREAD)):
-            t = RequestWorker(queue, i, percent, self.token)
+            t = RequestWorker(queue, i, percent, self.token, self.sync)
             t.setDaemon(True)
             t.start()
         log.info('Started {0} thread workers'.format(config.WORKER_THREAD))
@@ -393,9 +398,10 @@ class TaskBiasEstimates:
 
         del test_list_h1
 
-        bias = self.session.bias
-        bias.last_index_dataset = len(self.index)
-        self.session.bias = bias
+        if not self.sync:
+            bias = self.session.bias
+            bias.last_index_dataset = len(self.index)
+            self.session.bias = bias
 
         self.create_task_package()
         self.clear_redis_data()

@@ -254,6 +254,9 @@ class MetaData:
         """
         return list(map(int, range(1, len(self.work_data) + 1)))
 
+    def len_work_data(self):
+        return len(self.work_data)
+
     def get_alfa_len(self):
         """
         Получает массив индексов альф.
@@ -489,6 +492,8 @@ class BiasEstimate:
             self.data = []
 
     def get_len_data_indexes(self):
+        if self.data is None:
+            self.data = []
         return list(map(int, range(1, len(self.data) + 1)))
 
     def set_data(self):

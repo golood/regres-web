@@ -124,7 +124,34 @@ class Test:
         return self.tasks.get_results()
 
 
-class WorkerTask(Thread):
+class WorkerTask:
+    """
+    Синхронная задача вычисления критерия смещения.
+    """
+    def __init__(self, session=None, name=None, x=None, y=None):
+        self.user_token = session.token.body
+        self.name = name
+        self.task = TaskBiasEstimates(session=session, x=x, y=y, indices_x=self._init_list(len(x)), sync=True)
+        log.info(f'Create task name: {self.name} for user, token: {self.user_token}')
+
+    def start(self):
+        try:
+            self.task.run()
+            log.info(f'The task ({self.name}) start, user token: {self.user_token}')
+        except Exception as e:
+            log.error(f'The task ({self.name}) did not start. User token: {self.user_token}\nerror: {str(e)}')
+            raise e
+
+    @staticmethod
+    def _init_list(len_x):
+        m = []
+        for item in range(len_x):
+            m.append(item)
+
+        return m
+
+
+class WorkerTaskAsync(Thread):
     """
     Поток для решения, задачи вычисления критерия смещения.
     """
@@ -134,7 +161,7 @@ class WorkerTask(Thread):
         Thread.__init__(self)
         self.user_token = session.token.body
         self.name = name
-        self.task = TaskBiasEstimates(session=session, x=x, y=y, indices_x=self._init_list(len(x)))
+        self.task = TaskBiasEstimates(session=session, x=x, y=y, indices_x=self._init_list(len(x)), sync=False)
         log.info(f'Create task name: {self.name} for user, token: {self.user_token}')
 
     def run(self):
