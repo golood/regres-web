@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import datetime
+import json
 import time
 
 from flask import Flask, render_template, request, redirect, url_for, session, Response
@@ -7,7 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, R
 from server import config
 from server.logger import logger
 from server.main import WorkerTaskAsync, WorkerTask
-from server.models import MenuTypes, ShowMatrixMode, Data
+from server.models import MenuTypes, ShowMatrixMode, Data, MethodDivMatrixType
 from server.services import divisionService, workerService
 from server.session import Session
 
@@ -441,14 +442,37 @@ def form_calculation_predict():
     meta_data = _session.meta_data
     meta_data.range_value = int(request.form.get('range_value'))
 
-    task = WorkerTask(
-        session=_session,
-        name="calculation_predict",
-        x=meta_data.x(),
-        y=meta_data.y())
-    task.start()
+    if meta_data.method_div_matrix_type == MethodDivMatrixType.HAND:
+        task = WorkerTask(
+            session=_session,
+            name="calculation_predict",
+            x=meta_data.x(),
+            y=meta_data.y())
+        task.start()
 
-    return 'Ok!'
+        _data = json.loads(_session.bias.get_max_bias(_session.token.body))
+        meta_data.h1 = _data[4]
+        meta_data.h2 = _data[5]
+    else:
+        meta_data.h1, meta_data.h2 = divisionService.division(meta_data)
+
+    try:
+        data = Data(meta_data)
+        results = data.get_result()
+
+        if meta_data.mco:
+            mco_res = workerService.mco_api(meta_data)
+
+            for item in results:
+                if item[0] == 'МСО':
+                    item[1][2].append(mco_res['answer'][1])
+
+        meta_data.results = results
+
+        _session.meta_data = meta_data
+        return redirect(url_for('answer'))
+    except Exception as e:
+        return Response(str(e), status=500)
 
 
 @app.route('/form/calculation_bias_estimates', methods=['GET'])
