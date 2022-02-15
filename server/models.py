@@ -219,12 +219,26 @@ class MetaData:
 
     def y(self) -> list:
         y = []
-        for item in self.work_data:
-            for index in range(len(item)):
-                if index == self.index_y:
-                    y.append(item[index])
-                    break
-        return y
+        if self.mode == CalculationMode.STANDARD:
+            for item in self.work_data:
+                for index in range(len(item)):
+                    if index == self.index_y:
+                        y.append(item[index])
+                        break
+            return y
+        elif self.mode == CalculationMode.PREDICT:
+            i = 0
+            for item in self.work_data:
+
+                if i == self.range_value:
+                    return y
+
+                for index in range(len(item)):
+                    if index == self.index_y:
+                        y.append(item[index])
+                        i += 1
+                        break
+            return y
 
     def get_load_data_len(self) -> list:
         """
@@ -535,6 +549,11 @@ class BiasEstimate:
     def set_filters(self, form):
         self.filter = form.get('filter') if form.get('filter') is not None else TableFilter.TEN
         self.sorting = form.get('sorting') if form.get('sorting') is not None else TableSorting.F_max
+
+    def get_max_bias(self, token):
+        r = self._get_redis()
+
+        return r.get(f'{token}_max_bias')
 
     @staticmethod
     def get_value(data, key):
