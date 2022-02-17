@@ -9,7 +9,7 @@ from server import config
 from server.logger import logger
 from server.main import WorkerTaskAsync, WorkerTask
 from server.models import MenuTypes, ShowMatrixMode, Data, MethodDivMatrixType
-from server.services import divisionService, workerService
+from server.services import divisionService, workerService, predictService
 from server.session import Session
 
 app = Flask(__name__)
@@ -466,6 +466,8 @@ def form_calculation_predict():
             for item in results:
                 if item[0] == 'МСО':
                     item[1][2].append(mco_res['answer'][1])
+
+        predictService.calculation_predict(results, meta_data)
 
         meta_data.results = results
 

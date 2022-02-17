@@ -7,6 +7,12 @@
   <script src="https://code.highcharts.com/modules/export-data.js"></script>
   <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
+  {% if meta_data.mode == 'PREDICT' %}
+    <div style="float: right; border: 1px double black">
+      <span style="display: inline-block">Результаты вычислений для экзаменующей выборки </span>
+      <div style="display: inline-block;width: 50px; height: 20px; background: cornflowerblue"></div>
+    </div>
+  {% endif %}
   <h4>Найденные значения параметров</h4>
   <table class="table table-striped">
     <thead>
@@ -43,8 +49,8 @@
       {% for task in meta_data.results %}
         <tr>
           <th scope="row">{{ task[0] }}</th>
-          {% for item in task[1][1] %}
-            <td>{{ '{:.3f}'.format(item) }}</td>
+          {% for item in meta_data.get_work_data_rows_len() %}
+            <td {% if meta_data.mode == 'PREDICT' and item > meta_data.range_value %}style="background: cornflowerblue" {% endif %} >{{ '{:.3f}'.format(task[1][1][item-1]) }}</td>
           {% endfor %}
         </tr>
       {% endfor %}
@@ -65,14 +71,14 @@
       {% for task in meta_data.results %}
         <tr>
           <th scope="col">{{ task[0] }}</th>
-          {% for item in task[1][3] %}
-            <td>{{ '{:.3f}'.format(item) }}</td>
+          {% for item in meta_data.get_work_data_rows_len() %}
+            <td {% if meta_data.mode == 'PREDICT' and item > meta_data.range_value %}style="background: cornflowerblue" {% endif %} >{{ '{:.3f}'.format(task[1][3][item-1]) }}</td>
           {% endfor %}
         </tr>
       {% endfor %}
       <tr>
         <th scope="col">y</th>
-        {% for item in meta_data.y() %}
+        {% for item in meta_data.y_all() %}
           <td>{{ item }}</td>
         {% endfor %}
       </tr>
