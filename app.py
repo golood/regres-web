@@ -466,6 +466,8 @@ def form_calculation_predict():
             for item in results:
                 if item[0] == 'МСО':
                     item[1][2].append(mco_res['answer'][1])
+                else:
+                    item[1][2].append(None)
 
         predictService.calculation_predict(results, meta_data)
 

@@ -96,6 +96,9 @@
         <th scope="col">O</th>
         <th scope="col">Ф</th>
         <th scope="col">Оценка критерия смещения</th>
+        {% if meta_data.mode == 'PREDICT' %}
+          <th scope="col">Точность прогноза</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -103,7 +106,12 @@
         <tr>
           <th scope="row">{{ task[0] }}</th>
             {% for item in task[1][2] %}
-              <td>{{ '{:.2f}'.format(item) }}</td>
+              {% if item %}
+                <td>{{ '{:.2f}'.format(item) }}</td>
+              {% else %}
+                <td></td>
+              {% endif %}
+
             {% endfor %}
         </tr>
       {% endfor %}
