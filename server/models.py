@@ -192,6 +192,23 @@ class MetaData:
         except TypeError:
             return False
 
+    def x_predict(self) -> list:
+        x = []
+        i = 0
+        for item in self.work_data:
+
+            if i < self.range_value:
+                i += 1
+                continue
+
+            line = [] if not self.freeChlen else [1]
+            for index in range(len(item)):
+                if index != self.index_y:
+                    line.append(item[index])
+            x.append(line)
+            i += 1
+        return x
+
     def x(self) -> list:
         x = []
         if self.mode == CalculationMode.STANDARD:
@@ -216,6 +233,31 @@ class MetaData:
                 i += 1
 
         return x
+
+    def y_all(self):
+        y = []
+        for item in self.work_data:
+            for index in range(len(item)):
+                if index == self.index_y:
+                    y.append(item[index])
+                    break
+        return y
+
+    def y_predict(self):
+        y = []
+        i = 0
+        for item in self.work_data:
+
+            if i < self.range_value:
+                i += 1
+                continue
+
+            for index in range(len(item)):
+                if index == self.index_y:
+                    y.append(item[index])
+                    i += 1
+                    break
+        return y
 
     def y(self) -> list:
         y = []
