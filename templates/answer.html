@@ -149,6 +149,11 @@
           yAxis: {
               title: {
                   text: 'Значения'
+              },
+              labels: {
+                  formatter: function () {
+                      return this.value
+                  }
               }
           },
 
