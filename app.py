@@ -508,6 +508,19 @@ def form_calculation_bias_estimates():
     return redirect(url_for('div_matrix'))
 
 
+@app.route('/form/set_x', methods=['POST'])
+def form_set_x():
+    _session = get_session()
+    save_session(_session)
+
+    meta_data = _session.meta_data
+
+    meta_data.start_x = int(request.form.get('start'))
+    _session.meta_data = meta_data
+
+    return redirect(url_for('answer'))
+
+
 if __name__ == '__main__':
     if config.SPACE == 'dev':
         app.run(host='0.0.0.0', debug=True)

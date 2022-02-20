@@ -100,6 +100,7 @@ class MetaData:
     index_y: int
 
     results: list
+    start_x: int
 
     is_run_background_task: bool
     is_run_bias_estimates: bool
@@ -150,6 +151,7 @@ class MetaData:
         self.h2 = MetaData.get_value(data, 'h2')
 
         self.results = MetaData.get_value(data, 'results')
+        self.start_x = MetaData.get_value(data, 'start_x')
 
         self.is_run_background_task = MetaData.get_value_bool(data, 'is_run_background_task')
         self.is_run_bias_estimates = MetaData.get_value_bool(data, 'is_run_bias_estimates')
@@ -332,6 +334,15 @@ class MetaData:
         """
 
         return [self.mnk, self.mnm, self.mao, self.mco]
+
+    def get_start_x(self):
+        if self.start_x is None:
+            return None
+
+        indexes = []
+        for i in range(len(self.y_all())):
+            indexes.append(self.start_x + i)
+        return indexes
 
     def run_bias_estimates(self):
         self.is_run_background_task = True

@@ -135,10 +135,20 @@
     </div>
   {% endif %}
 
-  </br>
+  <br>
   <figure class="highcharts-figure">
     <div id="container"></div>
   </figure>
+  <br>
+
+  <div>Введите начало оси абсцисс</div>
+  <form name="set_x" action="/form/set_x" method="post" style="display: inline-block">
+    <div style="width: 100px">
+      <input class="form-control" name="start" type="number" step="1" {% if meta_data.start_x %}value="{{ meta_data.start_x }}"{% endif %}>
+    </div>
+    <br>
+    <button class="btn btn-primary" type="submit">Применить</button>
+  </form>
 
   <script>
       Highcharts.chart('container', {
@@ -159,16 +169,17 @@
 
           xAxis: {
               title: {
-                  text: 'Номера наблюдений'
+                  text: 'Наблюдения'
               },
-              accessibility: {
-                  rangeDescription: 'Номера наблюдений'
-              },
-              labels: {
-                  formatter: function () {
+              {% if meta_data.start_x %}
+                  categories: {{ meta_data.get_start_x() }},
+              {% else %}
+                  labels: {
+                    formatter: function () {
                       return this.value + 1
                   }
               }
+              {% endif %}
           },
 
           legend: {
@@ -193,7 +204,7 @@
           series: [
               {
                   name: 'y',
-                  data: {{ meta_data.y() }}
+                  data: {{ meta_data.y_all() }}
               },
               {% for task in meta_data.results %}
                   {
