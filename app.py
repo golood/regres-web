@@ -451,8 +451,8 @@ def form_calculation_predict():
         task.start()
 
         _data = json.loads(_session.bias.get_max_bias(_session.token.body))
-        meta_data.h1 = _data[4]
-        meta_data.h2 = _data[5]
+        meta_data.h1 = list(map(lambda x: x - 1, _data[4]))
+        meta_data.h2 = list(map(lambda x: x - 1, _data[5]))
     else:
         meta_data.h1, meta_data.h2 = divisionService.division(meta_data)
 
