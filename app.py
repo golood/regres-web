@@ -203,7 +203,10 @@ def div_matrix():
     _session.meta_data = meta_data
 
     bias = _session.bias
-    bias.data = bias.get_data(_session.token.body)
+    if meta_data.is_run_bias_estimates:
+        bias.data = None
+    else:
+        bias.data = bias.get_data(_session.token.body)
     _session.bias = bias
 
     return render_template('div_matrix.html',
@@ -236,28 +239,26 @@ def bias_estimates():
     Экран для отображения данных решения задачи поиска критерия смещения.
     :return: шаблон с результатами поиска критерия смещения.
     """
-    return 'Страница временно не доступна...'
+    # return 'Страница временно не доступна...'
 
-    # meta_data = MetaData(json.loads(get_object_session('meta_data')))
-    # meta_data.set_active_menu(MenuTypes.BIAS)
-    #
-    # task_id = WorkerRepo.get_task_in_last_worker_by_user(meta_data.user_session_id)
-    #
-    # if task_id is None:
-    #     return redirect(url_for('div_matrix'))
-    #
-    # filter_id = 0 if request.form.get('filter') is None else int(request.form.get('filter'))
-    # sorting_id = 0 if request.form.get('sorting') is None else int(request.form.get('sorting'))
-    #
-    # result = ResultRepo.get_task_by_best_bias_estimates(task_id, filter_id, sorting_id)
+    _session = get_session()
+    save_session(_session)
 
-    # return render_template('bias_estimates.html',
-    #                        auto=True,
-    #                        res=result,
-    #                        resLen=range(len(result)),
-    #                        meta_data=meta_data,
-    #                        params={'filterId': filter_id,
-    #                                'sortingId': sorting_id})
+    meta_data = _session.meta_data
+    meta_data.set_active_menu(MenuTypes.BIAS)
+    _session.meta_data = meta_data
+
+    if not meta_data.is_done_bias_estimates:
+        return redirect(url_for('div_matrix'))
+
+    bias = _session.bias
+    bias.data = bias.get_data(_session.token.body)
+    _session.bias = bias
+
+    return render_template('bias_estimates.html',
+                           meta_data=meta_data,
+                           bias=bias,
+                           biasLen=range(1, len(bias.data) + 1) if bias.data is not None else [])
 
 
 @app.route('/checkProgress', methods=['POST'])
@@ -349,15 +350,23 @@ def form_bias_filter():
     _session = get_session()
     save_session(_session)
 
-    # meta_data = _session.meta_data
+    bias = _session.bias
+    bias.set_filters(request.form)
+    _session.bias = bias
+
+    return redirect(url_for('div_matrix'))
+
+
+@app.route('/form/bias_filter_1', methods=['POST'])
+def form_bias_filter_1():
+    _session = get_session()
+    save_session(_session)
 
     bias = _session.bias
     bias.set_filters(request.form)
     _session.bias = bias
-    # meta_data.set_bias_filter_and_sorting_types(request.form)
 
-    # _session.meta_data = meta_data
-    return redirect(url_for('div_matrix'))
+    return redirect(url_for('bias_estimates'))
 
 
 @app.route('/form/calculation', methods=['POST'])
