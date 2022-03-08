@@ -1,27 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  {% if auto %}
+  {% if bias.data and meta_data.is_done_bias_estimates %}
     <br><br>
-    <form action="/biasEstimates" method="post">
+    <form action="/form/bias_filter_1" method="post">
       <div class="form-row align-items-center">
         <div class="col-auto my-1">
           <label class="mr-sm-2" for="filter">Фильтр</label>
           <select class="custom-select mr-sm-2" id="filter" name="filter">
-            <option {% if params.filterId == 0 %}selected {% endif %} value="0">20 результатов</option>
-            <option {% if params.filterId == 1 %}selected {% endif %} value="1">40 результатов</option>
-            <option {% if params.filterId == 2 %}selected {% endif %} value="2">100 результатов</option>
-            <option {% if params.filterId == 3 %}selected {% endif %} value="3">1000 результатов</option>
+            <option {% if bias.filter == "TEN" %}selected {% endif %} value="TEN">10 результатов</option>
+            <option {% if bias.filter == "FIFTY" %}selected {% endif %} value="FIFTY">50 результатов</option>
+            <option {% if bias.filter == "ONE_HUNDRED" %}selected {% endif %} value="ONE_HUNDRED">100 результатов</option>
+            <option {% if bias.filter == "ONE_THOUSAND" %}selected {% endif %} value="ONE_THOUSAND">1000 результатов</option>
           </select>
         </div>
 
         <div class="col-auto my-1">
           <label class="mr-sm-2" for="sorting">Сортировать по</label>
           <select class="custom-select mr-sm-2" id="sorting" name="sorting">
-            <option {% if params.sortingId == 0 %}selected {% endif %} value="0">оценке критерию смещения (по убыванию)</option>
-            <option {% if params.sortingId == 1 %}selected {% endif %} value="1">оценке критерию смещения (по возрастанию)</option>
-            <option {% if params.sortingId == 2 %}selected {% endif %} value="2">E (по убыванию)</option>
-            <option {% if params.sortingId == 3 %}selected {% endif %} value="3">E (по возрастанию)</option>
+            <option {% if bias.sorting == "F_max" %}selected {% endif %} value="F_max">оценке критерию смещения (по убыванию)</option>
+            <option {% if bias.sorting == "F_min" %}selected {% endif %} value="F_min">оценке критерию смещения (по возрастанию)</option>
+            <option {% if bias.sorting == "E_max" %}selected {% endif %} value="E_max">E (по убыванию)</option>
+            <option {% if bias.sorting == "E_min" %}selected {% endif %} value="E_min">E (по возрастанию)</option>
           </select>
         </div>
 
@@ -44,12 +44,15 @@
         </tr>
       </thead>
       <tbody> <!-- Data -->
-        {% for index in resLen %}
-          <tr>
+        {% for index in bias.get_len_data_indexes() %}
+          <tr id="biasEstimatesRow_{{ index }}">
             <th scope="row">{{ index }}</th>
-            {% for item in res[index] %}
+            {% for item in bias.data[index-1] %}
               <td>{{item}}</td>
             {% endfor %}
+            <th>
+              <button value="{{ index }}" type="button" class="btn btn-primary" onclick="getValuesForH1H2(this)">Применить</button>
+            </th>
           </tr>
         {% endfor %}
       </tbody>

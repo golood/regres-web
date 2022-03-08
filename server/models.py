@@ -374,7 +374,7 @@ class MetaData:
             self.menu_lock_div = False
         if self.answer:
             self.menu_lock_answer = False
-        if self.matrix_y_index is not None:
+        if self.is_done_bias_estimates:
             self.menu_lock_bias = False
 
     def set_active_menu(self, menu_type: MenuTypes):
