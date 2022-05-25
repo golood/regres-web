@@ -21,4 +21,4 @@ Werkzeug==2.0.1
 waitress==2.1.1
 pydevd-pycharm==212.5080.18
 deprecation==2.1.0
-PyJWT==2.3.0
+PyJWT==2.4.0
