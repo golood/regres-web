@@ -1,7 +1,7 @@
 wheel==0.37.0
 setuptools==57.4.0
 PyYAML==5.4.1
-certifi==2021.5.30
+certifi==2022.12.7
 chardet==4.0.0
 Click==8.0.1
 Flask==2.0.1
