@@ -17,7 +17,7 @@ redis==3.5.3
 requests==2.26.0
 urllib3==1.26.6
 uWSGI==2.0.19.1
-Werkzeug==2.0.1
+Werkzeug==2.2.3
 waitress==2.1.2
 pydevd-pycharm==212.5080.18
 deprecation==2.1.0
